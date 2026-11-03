@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>GPS-тест</title>
+
+<!-- Библиотека карт Leaflet (бесплатная) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Библиотека Telegram Mini App -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+  /* Цвета берутся из темы Telegram, поэтому приложение выглядит "родным" */
+  :root {
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --text: var(--tg-theme-text-color, #111111);
+    --hint: var(--tg-theme-hint-color, #888888);
+    --btn: var(--tg-theme-button-color, #2481cc);
+    --btn-text: var(--tg-theme-button-text-color, #ffffff);
+    --card: var(--tg-theme-secondary-bg-color, #f1f1f1);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  #app { display: flex; flex-direction: column; height: 100%; }
+  #map { flex: 1; min-height: 0; }
+  #panel {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--card);
+  }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .stat { background: var(--bg); border-radius: 10px; padding: 6px 8px; text-align: center; }
+  .stat b { display: block; font-size: 18px; }
+  .stat span { font-size: 11px; color: var(--hint); }
+  button {
+    width: 100%; border: 0; border-radius: 12px; padding: 14px;
+    font-size: 16px; font-weight: 600;
+    background: var(--btn); color: var(--btn-text);
+  }
+  button.stop { background: #d33; color: #fff; }
+  #status { font-size: 12px; color: var(--hint); margin-top: 6px; min-height: 16px; white-space: pre-line; }
+</style>
+</head>
+
+<body>
+<div id="app">
+  <div id="map"></div>
+
+  <div id="panel">
+    <div class="stats">
+      <div class="stat"><b id="sTime">00:00</b><span>время</span></div>
+      <div class="stat"><b id="sDist">0.00</b><span>км</span></div>
+      <div class="stat"><b id="sSpeed">0</b><span>км/ч сейчас</span></div>
+      <div class="stat"><b id="sAvg">0</b><span>км/ч средняя</span></div>
+      <div class="stat"><b id="sMax">0</b><span>км/ч макс.</span></div>
+      <div class="stat"><b id="sGap">0</b><span>макс. пауза, с</span></div>
+    </div>
+    <button id="btn">▶ Начать запись</button>
+    <div id="status">Нажмите «Начать запись» и разрешите доступ к геолокации.</div>
+  </div>
+</div>
+
+<script>
+// ---------- Подключение к Telegram ----------
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  tg.ready();    // сообщаем Telegram, что приложение загрузилось
+  tg.expand();   // раскрываем на весь экран
+  try { tg.disableVerticalSwipes(); } catch (e) {} // чтобы свайп не закрывал приложение
+}
+
+// ---------- Настройки фильтрации GPS ----------
+const MAX_ACCURACY_M = 50;       // точки с погрешностью больше 50 м отбрасываем
+const MAX_SPEED_MS = 100;        // выше ~360 км/ч считаем GPS-скачком
+const STANDING_SPEED_MS = 0.5;   // медленнее — считаем, что стоим (шум GPS)
+
+// ---------- Карта ----------
+const map = L.map('map', { zoomControl: false }).setView([50, 20], 3);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+const me = L.circleMarker([0, 0], { radius: 8, color: '#fff', weight: 3, fillColor: '#2481cc', fillOpacity: 1 });
+const line = L.polyline([], { weight: 5, color: '#e5322d' }).addTo(map);
+let firstFix = true;
+
+// ---------- Состояние записи ----------
+let rec = false;
+let watchId = null;
+let wakeLock = null;
+let timerId = null;
+let s; // сюда кладём данные текущей записи
+
+function resetState() {
+  s = {
+    startT: Date.now(),
+    last: null,        // последняя принятая точка
+    distance: 0,       // метры
+    maxSpeed: 0,       // м/с
+    maxGap: 0,         // секунды между принятыми точками
+    speedNow: 0,       // м/с
+    points: 0,
+    rejected: 0,
+    hiddenCount: 0,    // сколько раз приложение сворачивали
+    stopT: null
+  };
+  line.setLatLngs([]);
+}
+resetState();
+
+// ---------- Вспомогательные функции ----------
+const $ = id => document.getElementById(id);
+const kmh = ms => ms * 3.6;
+
+// Расстояние между двумя точками на Земле (формула гаверсинусов), в метрах
+function haversine(a, b) {
+  const R = 6371000, r = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const x = Math.sin(dLat / 2) ** 2 +
+            Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+function fmtTime(ms) {
+  const t = Math.floor(ms / 1000);
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60;
+  const mm = String(m).padStart(2, '0'), ss = String(sec).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+function setStatus(text) { $('status').textContent = text; }
+
+function render() {
+  const end = s.stopT || Date.now();
+  const elapsed = end - s.startT;
+  const avg = elapsed > 0 ? s.distance / (elapsed / 1000) : 0;
+  $('sTime').textContent = fmtTime(elapsed);
+  $('sDist').textContent = (s.distance / 1000).toFixed(2);
+  $('sSpeed').textContent = Math.round(kmh(s.speedNow));
+  $('sAvg').textContent = Math.round(kmh(avg));
+  $('sMax').textContent = Math.round(kmh(s.maxSpeed));
+  $('sGap').textContent = Math.round(s.maxGap);
+}
+
+// ---------- Получение позиции ----------
+function onPosition(pos) {
+  const c = pos.coords;
+  const p = { lat: c.latitude, lon: c.longitude, t: pos.timestamp, acc: c.accuracy };
+
+  // Показываем текущее положение на карте
+  me.setLatLng([p.lat, p.lon]);
+  if (!map.hasLayer(me)) me.addTo(map);
+  if (firstFix) { map.setView([p.lat, p.lon], 16); firstFix = false; }
+
+  if (!rec) return;
+
+  // 1) Отбрасываем неточные точки
+  if (p.acc > MAX_ACCURACY_M) { s.rejected++; return; }
+
+  if (s.last) {
+    const dt = (p.t - s.last.t) / 1000;
+    if (dt <= 0) return;
+    const d = haversine(s.last, p);
+    const v = d / dt;
+
+    // 2) Отбрасываем нереальные скачки
+    if (v > MAX_SPEED_MS) { s.rejected++; return; }
+
+    // 3) Считаем самую длинную паузу между точками (важно для теста!)
+    s.maxGap = Math.max(s.maxGap, dt);
+
+    // 4) Расстояние добавляем, только если действительно движемся
+    if (v >= STANDING_SPEED_MS) s.distance += d;
+
+    // Скорость: берём от GPS, а если её нет — считаем сами
+    s.speedNow = (c.speed != null && c.speed >= 0) ? c.speed : v;
+    s.maxSpeed = Math.max(s.maxSpeed, s.speedNow);
+  }
+
+  s.last = p;
+  s.points++;
+  line.addLatLng([p.lat, p.lon]);
+  map.panTo([p.lat, p.lon], { animate: true });
+  render();
+  setStatus(`Точек: ${s.points} · точность ±${Math.round(p.acc)} м · отброшено: ${s.rejected}\n` +
+            `Сворачивали приложение: ${s.hiddenCount} раз`);
+}
+
+function onError(err) {
+  const texts = {
+    1: 'Доступ к геолокации запрещён. Разрешите его в настройках Telegram / телефона.',
+    2: 'Не удалось определить положение (нет сигнала GPS).',
+    3: 'Время ожидания геолокации истекло.'
+  };
+  setStatus(texts[err.code] || ('Ошибка геолокации: ' + err.message));
+}
+
+// Просим у Telegram доступ к геолокации (новые версии Telegram)
+function askTelegramLocation() {
+  return new Promise(resolve => {
+    const done = () => resolve();
+    try {
+      const lm = tg && tg.LocationManager;
+      if (!lm) return done();
+      setTimeout(done, 15000); // страховка, чтобы не зависнуть
+      lm.init(() => {
+        if (lm.isLocationAvailable && !lm.isAccessGranted) {
+          lm.getLocation(() => done()); // вызывает окно с запросом разрешения
+        } else {
+          done();
+        }
+      });
+    } catch (e) { done(); }
+  });
+}
+
+// Не даём экрану погаснуть во время записи
+async function keepScreenOn() {
+  try {
+    if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+  } catch (e) {}
+}
+
+// ---------- Старт / стоп ----------
+async function start() {
+  resetState();
+  rec = true;
+  $('btn').textContent = '■ Остановить';
+  $('btn').classList.add('stop');
+  setStatus('Запрашиваю доступ к геолокации…');
+
+  await askTelegramLocation();
+  if (!('geolocation' in navigator)) { setStatus('Геолокация недоступна на этом устройстве.'); return; }
+
+  s.startT = Date.now();
+  watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+    enableHighAccuracy: true, maximumAge: 0, timeout: 20000
+  });
+  keepScreenOn();
+  timerId = setInterval(render, 1000);
+  setStatus('Ищу GPS-сигнал…');
+}
+
+function stop() {
+  rec = false;
+  s.stopT = Date.now();
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  watchId = null;
+  clearInterval(timerId);
+  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  $('btn').textContent = '▶ Начать запись заново';
+  $('btn').classList.remove('stop');
+  render();
+  setStatus(`Запись завершена.\nТочек: ${s.points} · макс. пауза между точками: ${Math.round(s.maxGap)} с\n` +
+            `Сворачивали приложение: ${s.hiddenCount} раз`);
+}
+
+$('btn').addEventListener('click', () => rec ? stop() : start());
+
+// Считаем сворачивания (чтобы понять, как Telegram ведёт себя в фоне)
+document.addEventListener('visibilitychange', () => {
+  if (!rec) return;
+  if (document.hidden) {
+    s.hiddenCount++;
+  } else {
+    keepScreenOn(); // экран снова включили — повторно запрашиваем блокировку
+  }
+});
+</script>
+</body>
+</html>
