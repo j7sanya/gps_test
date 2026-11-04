@@ -44,17 +44,59 @@
   }
   button.stop { background: #d33; color: #fff; }
   #status { font-size: 12px; color: var(--hint); margin-top: 6px; min-height: 16px; white-space: pre-line; }
-  /* Кнопка «Моё местоположение» поверх карты */
-  #locate {
-    position: absolute; top: 12px; right: 12px; z-index: 1000;
-    width: 44px; height: 44px; padding: 0; font-size: 20px; border-radius: 50%;
+  /* Кнопки поверх карты */
+  #routesBtn, #locate {
+    position: absolute; right: 12px; z-index: 1000; width: auto;
     background: var(--bg); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,.3);
   }
+  #routesBtn { top: 12px; padding: 10px 16px; font-size: 15px; border-radius: 22px; }
+  #locate { top: 62px; width: 44px; height: 44px; padding: 0; font-size: 20px; border-radius: 50%; }
+  #saveBtn { display: none; margin-top: 8px; background: #1a9e4b; color: #fff; }
+
+  /* Окно «Трассы» */
+  #routesOverlay {
+    display: none; position: fixed; inset: 0; z-index: 3000;
+    flex-direction: column; background: var(--bg); color: var(--text);
+  }
+  #routesOverlay.open { display: flex; }
+  .ov-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--card);
+  }
+  .ov-head h2 { margin: 0; font-size: 20px; }
+  .ov-close { width: auto; padding: 6px 12px; font-size: 18px; background: var(--card); color: var(--text); }
+  #routesList { flex: 1; overflow-y: auto; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .route-card { background: var(--card); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+  .route-card .name { font-size: 17px; font-weight: 700; }
+  .route-card .meta { font-size: 14px; margin-top: 4px; }
+  .route-card .rec { font-size: 13px; color: var(--hint); margin-top: 2px; }
+  .route-card .acts { display: flex; gap: 8px; margin-top: 10px; }
+  .route-card .acts button { padding: 8px; font-size: 14px; border-radius: 10px; }
+  .route-card .acts .del { background: transparent; color: #d33; border: 1px solid #d33; }
+  .empty { color: var(--hint); text-align: center; padding: 40px 10px; line-height: 1.5; }
+
+  /* Окно сохранения трассы */
+  #saveDialog {
+    display: none; position: fixed; inset: 0; z-index: 4000;
+    background: rgba(0,0,0,.55); align-items: center; justify-content: center; padding: 20px;
+  }
+  #saveDialog.open { display: flex; }
+  .dlg { background: var(--bg); color: var(--text); border-radius: 16px; padding: 18px; width: 100%; max-width: 360px; }
+  .dlg h3 { margin: 0 0 6px; }
+  .dlg p { margin: 0 0 12px; font-size: 13px; color: var(--hint); white-space: pre-line; }
+  .dlg input {
+    width: 100%; padding: 12px; font-size: 16px; border-radius: 10px;
+    border: 1px solid var(--hint); background: var(--card); color: var(--text); margin-bottom: 12px;
+  }
+  .dlg .row { display: flex; gap: 8px; }
+  .dlg .row button { padding: 12px; }
+  .dlg .cancel { background: var(--card); color: var(--text); }
 </style>
 </head>
 
 <body>
 <div id="app">
+  <button id="routesBtn">🏁 Трассы</button>
   <button id="locate" title="Моё местоположение">📍</button>
   <div id="map"></div>
 
@@ -68,7 +110,30 @@
       <div class="stat"><b id="sGap">0</b><span>макс. пауза, с</span></div>
     </div>
     <button id="btn">▶ Начать запись</button>
+    <button id="saveBtn">💾 Сохранить как трассу</button>
     <div id="status">Определяю ваше местоположение… Разрешите доступ к геолокации.</div>
+  </div>
+</div>
+
+<!-- Окно со списком трасс -->
+<div id="routesOverlay">
+  <div class="ov-head">
+    <h2>🏁 Трассы</h2>
+    <button class="ov-close" id="routesClose">✕</button>
+  </div>
+  <div id="routesList"></div>
+</div>
+
+<!-- Окно сохранения новой трассы -->
+<div id="saveDialog">
+  <div class="dlg">
+    <h3>Новая трасса</h3>
+    <p id="saveInfo"></p>
+    <input id="routeName" type="text" maxlength="40" placeholder="Название трассы">
+    <div class="row">
+      <button class="cancel" id="saveCancel">Отмена</button>
+      <button id="saveOk">Сохранить</button>
+    </div>
   </div>
 </div>
 
@@ -113,6 +178,8 @@ let watchId = null;
 let wakeLock = null;
 let timerId = null;
 let summary = '';
+let snapGeoms = [];  // участки трека, привязанные к дорогам (списки [lon, lat])
+let snapTotal = 0;   // длина привязанного трека, метры
 let s; // сюда кладём данные текущей записи
 
 function resetState() {
@@ -332,6 +399,7 @@ async function snapToRoads() {
         for (const m of data.matchings) {
           L.geoJSON(m.geometry, { style: { color: '#1a9e4b', weight: 6, opacity: 0.95 } }).addTo(snapLayer);
           total += m.distance;
+          snapGeoms.push(m.geometry.coordinates);
           matched++;
         }
       } else {
@@ -343,6 +411,7 @@ async function snapToRoads() {
   }
 
   if (matched) {
+    snapTotal = total;
     line.setStyle({ opacity: 0.35, dashArray: '4 8' });  // «сырой» трек делаем бледным пунктиром
     setStatus(summary + `\nПо дорогам (зелёная линия): ${(total / 1000).toFixed(2)} км · участков: ${matched}` +
               (failed ? `\nНе удалось привязать частей: ${failed}` : ''));
@@ -354,6 +423,9 @@ async function snapToRoads() {
 // ---------- Старт / стоп ----------
 async function start() {
   resetState();
+  snapGeoms = [];
+  snapTotal = 0;
+  $('saveBtn').style.display = 'none';
   rec = true;
   $('btn').textContent = '■ Остановить';
   $('btn').classList.add('stop');
@@ -378,7 +450,10 @@ function stop() {
   summary = `Запись завершена.\nТочек: ${s.points} · макс. пауза: ${Math.round(s.maxGap)} с · разрывов: ${s.breaks}\n` +
             `Сворачивали приложение: ${s.hiddenCount} раз`;
   setStatus(summary);
-  snapToRoads();
+  // Когда привязка к дорогам закончилась, предлагаем сохранить трек как трассу
+  snapToRoads().then(() => {
+    if (!rec && s.points >= 2) $('saveBtn').style.display = 'block';
+  });
 }
 
 $('btn').addEventListener('click', () => rec ? stop() : start());
@@ -398,6 +473,164 @@ document.addEventListener('visibilitychange', () => {
     keepScreenOn(); // экран снова включили — повторно запрашиваем блокировку
   }
 });
+
+// ====================== ТРАССЫ ======================
+// Пока трассы хранятся в памяти телефона (localStorage). Позже перенесём на сервер,
+// чтобы их видели все пользователи и рекорды были общими.
+const STORE_KEY = 'strace_routes_v1';
+const routeLayer = L.layerGroup().addTo(map);   // выбранная трасса на карте
+let routes = loadRoutes();
+
+function loadRoutes() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch (e) { return []; }
+}
+function storeRoutes() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(routes)); return true; } catch (e) { return false; }
+}
+
+const fmtKm = m => (m / 1000).toFixed(2) + ' км';
+const fmtDate = ts => new Date(ts).toLocaleDateString('ru-RU');
+
+// --- Окно со списком трасс ---
+function openRoutes() {
+  renderRoutes();
+  $('routesOverlay').classList.add('open');
+  try { tg.BackButton.show(); tg.BackButton.onClick(closeRoutes); } catch (e) {}
+}
+function closeRoutes() {
+  $('routesOverlay').classList.remove('open');
+  try { tg.BackButton.offClick(closeRoutes); tg.BackButton.hide(); } catch (e) {}
+}
+
+function renderRoutes() {
+  const box = $('routesList');
+  box.textContent = '';
+
+  if (!routes.length) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'Трасс пока нет.\nЗапишите заезд кнопкой «Начать запись», затем нажмите ' +
+                    '«Сохранить как трассу»: она появится здесь вместе с первым рекордом.';
+    e.style.whiteSpace = 'pre-line';
+    box.appendChild(e);
+    return;
+  }
+
+  routes.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'route-card';
+
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = r.name;
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = '📏 ' + fmtKm(r.distance);
+
+    const rec = document.createElement('div');
+    rec.className = 'rec';
+    rec.textContent = r.record
+      ? `🏆 Рекорд: ${fmtTime(r.record.time * 1000)} · ${Math.round(r.record.avgKmh)} км/ч средняя · ${fmtDate(r.record.date)}`
+      : '🏆 Рекорда пока нет';
+
+    const acts = document.createElement('div');
+    acts.className = 'acts';
+    const show = document.createElement('button');
+    show.textContent = 'Показать на карте';
+    show.onclick = () => showRoute(r);
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = 'Удалить';
+    del.onclick = () => deleteRoute(r);
+    acts.append(show, del);
+
+    card.append(name, meta, rec, acts);
+    box.appendChild(card);
+  });
+}
+
+function showRoute(r) {
+  routeLayer.clearLayers();
+  const all = [];
+  r.lines.forEach(l => {
+    L.polyline(l, { color: '#7b3fe4', weight: 7, opacity: 0.9 }).addTo(routeLayer);
+    all.push(...l);
+  });
+  if (all.length) {
+    L.circleMarker(all[0], { radius: 9, color: '#fff', weight: 3, fillColor: '#1a9e4b', fillOpacity: 1 })
+      .bindTooltip('Старт').addTo(routeLayer);
+    L.circleMarker(all[all.length - 1], { radius: 9, color: '#fff', weight: 3, fillColor: '#111', fillOpacity: 1 })
+      .bindTooltip('Финиш').addTo(routeLayer);
+    map.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
+  }
+  closeRoutes();
+  setStatus(`Трасса «${r.name}» · ${fmtKm(r.distance)}`);
+}
+
+function deleteRoute(r) {
+  const doDelete = () => {
+    routes = routes.filter(x => x.id !== r.id);
+    storeRoutes();
+    routeLayer.clearLayers();
+    renderRoutes();
+  };
+  const text = `Удалить трассу «${r.name}»?`;
+  if (tg && tg.showConfirm) {
+    try { return tg.showConfirm(text, ok => ok && doDelete()); } catch (e) {}
+  }
+  if (confirm(text)) doDelete();
+}
+
+// --- Сохранение записанного трека как трассы ---
+function openSaveDialog() {
+  const dist = snapGeoms.length ? snapTotal : s.distance;
+  const secs = Math.round((s.stopT - s.startT) / 1000);
+  const valid = s.breaks === 0;
+  $('saveInfo').textContent =
+    `Длина: ${fmtKm(dist)} · время: ${fmtTime(secs * 1000)}\n` +
+    (snapGeoms.length ? 'Трасса будет сохранена по дорогам.' : 'Привязки к дорогам нет, сохранится исходный GPS-трек.') +
+    (valid ? '\nЭто время станет первым рекордом.' : '\nВ записи были разрывы, поэтому рекорд не засчитывается.');
+  $('routeName').value = 'Трасса ' + (routes.length + 1);
+  $('saveDialog').classList.add('open');
+}
+
+function saveRoute() {
+  const name = $('routeName').value.trim() || ('Трасса ' + (routes.length + 1));
+  const secs = Math.round((s.stopT - s.startT) / 1000);
+  const dist = snapGeoms.length ? snapTotal : s.distance;
+
+  // Геометрия: по дорогам, если привязка удалась; иначе сам GPS-трек (не более 400 точек на участок)
+  const lines = snapGeoms.length
+    ? snapGeoms.map(g => thin(g, 400).map(c => [c[1], c[0]]))   // OSRM отдаёт [lon, lat], Leaflet хочет [lat, lon]
+    : s.segs.filter(seg => seg.length >= 2).map(seg => thin(seg, 400).map(p => [p.lat, p.lon]));
+
+  const route = {
+    id: Date.now(),
+    name,
+    distance: dist,
+    snapped: snapGeoms.length > 0,
+    lines,
+    record: (s.breaks === 0 && secs > 0)
+      ? { time: secs, avgKmh: (dist / secs) * 3.6, date: Date.now() }
+      : null
+  };
+  routes.push(route);
+
+  $('saveDialog').classList.remove('open');
+  $('saveBtn').style.display = 'none';
+  if (storeRoutes()) {
+    setStatus(`Трасса «${name}» сохранена. Откройте «🏁 Трассы», чтобы увидеть её.`);
+  } else {
+    setStatus('Не удалось сохранить трассу в память телефона (хранилище недоступно).');
+  }
+}
+
+$('routesBtn').addEventListener('click', openRoutes);
+$('routesClose').addEventListener('click', closeRoutes);
+$('saveBtn').addEventListener('click', openSaveDialog);
+$('saveCancel').addEventListener('click', () => $('saveDialog').classList.remove('open'));
+$('saveOk').addEventListener('click', saveRoute);
 
 // Сразу при открытии определяем местоположение
 startWatching();
