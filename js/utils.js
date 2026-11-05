@@ -25,6 +25,15 @@ STR.u = (function () {
     return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
   }
 
+  // Секунды -> «мм:сс.сс» (с сотыми долями), для часов «ч:мм:сс.сс»
+  function fmtPrecise(sec) {
+    const cs = Math.max(0, Math.floor(sec * 100 + 1e-6));
+    const c = cs % 100, t = Math.floor(cs / 100);
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    const p = n => String(n).padStart(2, '0');
+    return (h > 0 ? h + ':' : '') + p(m) + ':' + p(s) + '.' + p(c);
+  }
+
   // Выбираем не больше max элементов, равномерно (первый и последний сохраняются)
   function thin(items, max) {
     if (items.length <= max) return items;
@@ -37,6 +46,7 @@ STR.u = (function () {
     $,
     haversine,
     fmtTime,
+    fmtPrecise,
     thin,
     kmh: ms => ms * 3.6,
     fmtKm: m => (m / 1000).toFixed(2) + ' км',

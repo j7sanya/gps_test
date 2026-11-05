@@ -39,6 +39,7 @@ STR.gps = (function () {
 
     lastPos = p;
     STR.map.showMe(p);
+    if (STR.run) STR.run.onFix(p);   // заезды по трассам (см. run.js)
 
     // Пока запись не идёт, просто показываем, где мы находимся
     if (!rec) {
@@ -189,15 +190,23 @@ STR.gps = (function () {
 
   // Считаем сворачивания (чтобы понять, как Telegram ведёт себя в фоне)
   document.addEventListener('visibilitychange', () => {
-    if (!rec) return;
-    if (document.hidden) s.hiddenCount++;
+    const running = STR.run && STR.run.isActive();
+    if (!rec && !running) return;
+    if (document.hidden) { if (rec) s.hiddenCount++; }
     else keepScreenOn();   // экран снова включили — повторно запрашиваем блокировку
   });
+
+  // Для заездов: не давать экрану погаснуть / отпустить
+  function releaseScreen() {
+    if (!rec && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
 
   return {
     start,
     stop,
     startWatching,
+    holdScreen: keepScreenOn,
+    releaseScreen,
     isRecording: () => rec,
     lastPos: () => lastPos
   };

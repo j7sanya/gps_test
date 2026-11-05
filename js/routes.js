@@ -46,7 +46,7 @@ STR.routes = (function () {
       recEl.className = 'rec';
       const rec = STR.api.getRecord(r.id);
       recEl.textContent = rec
-        ? `🏆 Рекорд: ${U.fmtTime(rec.time * 1000)} · ${Math.round(rec.avgKmh)} км/ч средняя · ${U.fmtDate(rec.date)}`
+        ? `🏆 Рекорд: ${U.fmtPrecise(rec.time)} · ${Math.round(rec.avgKmh)} км/ч средняя · ${U.fmtDate(rec.date)}`
         : '🏆 Рекорда пока нет';
 
       const acts = document.createElement('div');
@@ -79,6 +79,7 @@ STR.routes = (function () {
     const doDelete = () => {
       STR.api.deleteRoute(r.id);
       STR.map.clearRoute();
+      STR.run.refresh();
       render();
     };
     const text = `Удалить трассу «${r.name}»?`;
@@ -129,6 +130,7 @@ STR.routes = (function () {
     }
 
     pending = null;
+    STR.run.refresh();   // новая трасса сразу доступна для заездов
     closeSaveDialog();
     STR.ui.showSave(false);
     U.setStatus(ok

@@ -16,6 +16,7 @@
   let lastRecording = null; // итоги последней записи (для кнопки «Сохранить как трассу»)
 
   async function onStart() {
+    STR.run.cancel();   // запись нового маршрута и заезд одновременно не идут
     session++;
     lastRecording = null;
     STR.ui.showSave(false);
@@ -62,6 +63,6 @@
   });
 
   // Запуск: грузим официальные трассы и сразу определяем местоположение
-  STR.api.init();
+  STR.api.init().then(() => STR.run.refresh());
   STR.gps.startWatching();
 })();

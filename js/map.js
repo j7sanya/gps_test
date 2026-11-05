@@ -42,8 +42,9 @@ STR.map = (function () {
       rawLine.setStyle({ opacity: 0.35, dashArray: '4 8' });
     },
 
-    // Показать трассу (lines — список линий, каждая — список точек [lat, lon])
-    showRoute(lines) {
+    // Показать трассу (lines — список линий, каждая — список точек [lat, lon]).
+    // fit=false: не менять масштаб карты (во время заезда карта следует за вами)
+    showRoute(lines, fit = true) {
       routeLayer.clearLayers();
       const all = [];
       lines.forEach(l => {
@@ -55,7 +56,7 @@ STR.map = (function () {
         .bindTooltip('Старт').addTo(routeLayer);
       L.circleMarker(all[all.length - 1], { radius: 9, color: '#fff', weight: 3, fillColor: '#111', fillOpacity: 1 })
         .bindTooltip('Финиш').addTo(routeLayer);
-      map.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
+      if (fit) map.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
     },
     clearRoute() { routeLayer.clearLayers(); }
   };

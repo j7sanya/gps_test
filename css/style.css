@@ -77,3 +77,19 @@
   .dlg .row { display: flex; gap: 8px; }
   .dlg .row button { padding: 12px; }
   .dlg .cancel { background: var(--card); color: var(--text); }
+
+  /* Секундомер заезда */
+  #runBanner {
+    display: none; position: absolute; top: 12px; left: 12px; right: 128px; z-index: 1000;
+    background: var(--bg); color: var(--text); border-radius: 16px; padding: 10px 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.35);
+  }
+  #runBanner.open { display: block; }
+  #runName { font-size: 13px; color: var(--hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #runTime {
+    font-size: 34px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  #runInfo { font-size: 12px; margin-top: 2px; white-space: pre-line; }
+  #runBanner.bad #runInfo { color: #d33; }
+  #runBtn { margin-top: 8px; padding: 8px; font-size: 14px; border-radius: 10px; background: var(--card); color: var(--text); }
