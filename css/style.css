@@ -44,17 +44,10 @@ html, body {
 /* ---------- Нижняя панель ---------- */
 #panel {
   position: relative;
-  padding: 18px 12px calc(10px + env(safe-area-inset-bottom));
+  padding: 12px 12px calc(10px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, var(--panel), #0d1015);
   border-top: 1px solid var(--line);
 }
-/* «Шахматная» финишная полоса сверху панели */
-#panel::before {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px;
-  background: repeating-conic-gradient(#f3f5f8 0% 25%, #0b0d10 0% 50%) 0 0 / 12px 12px;
-  opacity: .9;
-}
-
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
 .stat {
   background: var(--card); border: 1px solid var(--line); border-radius: 12px;

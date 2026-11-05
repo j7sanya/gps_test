@@ -48,13 +48,13 @@ STR.map = (function () {
       routeLayer.clearLayers();
       const all = [];
       lines.forEach(l => {
-        L.polyline(l, { color: '#ffb400', weight: 7, opacity: 0.9 }).addTo(routeLayer);
+        L.polyline(l, { color: '#22d36b', weight: 6, opacity: 0.9 }).addTo(routeLayer);
         all.push(...l);
       });
       if (!all.length) return;
-      L.circleMarker(all[0], { radius: 9, color: '#fff', weight: 3, fillColor: '#22d36b', fillOpacity: 1 })
+      L.circleMarker(all[0], { radius: 5, color: '#0b0d10', weight: 2, fillColor: '#ffffff', fillOpacity: 1 })
         .bindTooltip('Старт').addTo(routeLayer);
-      L.circleMarker(all[all.length - 1], { radius: 9, color: '#fff', weight: 3, fillColor: '#ffffff', fillOpacity: 1 })
+      L.circleMarker(all[all.length - 1], { radius: 5, color: '#0b0d10', weight: 2, fillColor: '#ff2d3d', fillOpacity: 1 })
         .bindTooltip('Финиш').addTo(routeLayer);
       if (fit) map.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
     },
