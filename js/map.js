@@ -9,9 +9,9 @@ STR.map = (function () {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  const me = L.circleMarker([0, 0], { radius: 8, color: '#fff', weight: 3, fillColor: '#2481cc', fillOpacity: 1 });
-  const accCircle = L.circle([0, 0], { radius: 0, weight: 1, color: '#2481cc', fillOpacity: 0.12 });
-  const rawLine = L.polyline([], { weight: 5, color: '#e5322d' }).addTo(map);  // «сырой» GPS-трек
+  const me = L.circleMarker([0, 0], { radius: 8, color: '#fff', weight: 3, fillColor: '#19c8ff', fillOpacity: 1 });
+  const accCircle = L.circle([0, 0], { radius: 0, weight: 1, color: '#19c8ff', fillOpacity: 0.12 });
+  const rawLine = L.polyline([], { weight: 5, color: '#ff2d3d' }).addTo(map);  // «сырой» GPS-трек
   const snapLayer = L.layerGroup().addTo(map);                                   // трек по дорогам
   const routeLayer = L.layerGroup().addTo(map);                                  // выбранная трасса
   let first = true;
@@ -38,7 +38,7 @@ STR.map = (function () {
     // Зелёная линия «по дорогам»; красный трек становится бледным пунктиром
     drawSnapped(geoms) {
       geoms.forEach(g => L.geoJSON({ type: 'LineString', coordinates: g },
-        { style: { color: '#1a9e4b', weight: 6, opacity: 0.95 } }).addTo(snapLayer));
+        { style: { color: '#22d36b', weight: 6, opacity: 0.95 } }).addTo(snapLayer));
       rawLine.setStyle({ opacity: 0.35, dashArray: '4 8' });
     },
 
@@ -48,13 +48,13 @@ STR.map = (function () {
       routeLayer.clearLayers();
       const all = [];
       lines.forEach(l => {
-        L.polyline(l, { color: '#7b3fe4', weight: 7, opacity: 0.9 }).addTo(routeLayer);
+        L.polyline(l, { color: '#ffb400', weight: 7, opacity: 0.9 }).addTo(routeLayer);
         all.push(...l);
       });
       if (!all.length) return;
-      L.circleMarker(all[0], { radius: 9, color: '#fff', weight: 3, fillColor: '#1a9e4b', fillOpacity: 1 })
+      L.circleMarker(all[0], { radius: 9, color: '#fff', weight: 3, fillColor: '#22d36b', fillOpacity: 1 })
         .bindTooltip('Старт').addTo(routeLayer);
-      L.circleMarker(all[all.length - 1], { radius: 9, color: '#fff', weight: 3, fillColor: '#111', fillOpacity: 1 })
+      L.circleMarker(all[all.length - 1], { radius: 9, color: '#fff', weight: 3, fillColor: '#ffffff', fillOpacity: 1 })
         .bindTooltip('Финиш').addTo(routeLayer);
       if (fit) map.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
     },

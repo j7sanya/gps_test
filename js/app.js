@@ -9,6 +9,8 @@
   if (tg) {
     tg.ready();
     tg.expand();
+    // Красим шапку и фон Telegram в цвет приложения (тёмный стиль)
+    try { tg.setHeaderColor('#0b0d10'); tg.setBackgroundColor('#0b0d10'); tg.setBottomBarColor('#11141a'); } catch (e) {}
     try { tg.disableVerticalSwipes(); } catch (e) {}   // чтобы свайп не закрывал приложение
   }
 

@@ -45,6 +45,7 @@ STR.routes = (function () {
       const recEl = document.createElement('div');
       recEl.className = 'rec';
       const rec = STR.api.getRecord(r.id);
+      if (rec) recEl.classList.add('has');   // рекорд подсвечивается золотым (см. style.css)
       recEl.textContent = rec
         ? `🏆 Рекорд: ${U.fmtPrecise(rec.time)} · ${Math.round(rec.avgKmh)} км/ч средняя · ${U.fmtDate(rec.date)}`
         : '🏆 Рекорда пока нет';

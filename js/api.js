@@ -26,7 +26,20 @@ STR.api = (function () {
     try {
       const resp = await fetch(C.ROUTES_URL + '?v=' + C.VERSION, { cache: 'no-cache' });
       const data = await resp.json();
-      official = (data.routes || []).map(r => ({ ...r, id: String(r.id), local: false }));
+      official = [];
+      (data.routes || []).forEach(r => {
+        const base = { ...r, id: String(r.id), local: false };
+        if (!r.bidirectional) { official.push(base); return; }
+        // Двусторонняя трасса: две отдельные трассы, у каждой свой старт, финиш и рекорд.
+        // Начало и конец трассы работают и как старт, и как финиш — зависит от направления.
+        official.push({ ...base, name: r.name + ' (туда)' });
+        official.push({
+          ...base,
+          id: base.id + '-rev',
+          name: r.name + ' (обратно)',
+          lines: base.lines.slice().reverse().map(l => l.slice().reverse())
+        });
+      });
     } catch (e) {
       official = [];
     }
