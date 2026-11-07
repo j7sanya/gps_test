@@ -142,11 +142,11 @@ button.stop {
 .empty { color: var(--hint); text-align: center; padding: 40px 10px; line-height: 1.5; white-space: pre-line; }
 
 /* ---------- Окно сохранения трассы ---------- */
-#saveDialog {
+#saveDialog, #nickGate {
   display: none; position: fixed; inset: 0; z-index: 4000;
   background: rgba(0,0,0,.72); align-items: center; justify-content: center; padding: 20px;
 }
-#saveDialog.open { display: flex; }
+#saveDialog.open, #nickGate.open { display: flex; }
 .dlg {
   background: var(--panel); color: var(--text); border: 1px solid var(--line);
   border-radius: 18px; padding: 18px; width: 100%; max-width: 360px;

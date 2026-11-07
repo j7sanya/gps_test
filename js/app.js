@@ -71,6 +71,11 @@
     if (p) STR.map.goTo(p); else STR.gps.startWatching();
   });
 
+  // Ника нет — подсказываем задать его в боте (только если подключён сервер и мы внутри Telegram)
+  $('nickLater').addEventListener('click', () => $('nickGate').classList.remove('open'));
+  $('nickClose').addEventListener('click', () => { try { tg.close(); } catch (e) { $('nickGate').classList.remove('open'); } });
+  STR.api.checkNick().then(r => { if (r === 'none') $('nickGate').classList.add('open'); });
+
   // Запуск: грузим официальные трассы и сразу определяем местоположение
   STR.api.init().then(() => STR.run.refresh());
   STR.gps.startWatching();

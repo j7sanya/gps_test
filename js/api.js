@@ -31,18 +31,29 @@ STR.api = (function () {
   async function loadBoard() {
     if (!serverOn()) return false;
     try {
-      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,created_at,players(name)&order=time_s.asc&limit=1000';
+      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,created_at,players(nick)&order=time_s.asc&limit=1000';
       const rows = await (await fetch(url, { headers: hdr() })).json();
       if (!Array.isArray(rows)) return false;
       const me = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user ? STR.tg.initDataUnsafe.user.id : null;
       board = {};
       rows.forEach(r => {
         (board[r.route_id] = board[r.route_id] || []).push({
-          name: (r.players && r.players.name) || 'Игрок', time: Number(r.time_s), avgKmh: Number(r.avg_kmh), date: r.created_at ? Date.parse(r.created_at) : null, mine: me !== null && r.tg_id === me
+          name: (r.players && r.players.nick) || 'Игрок', time: Number(r.time_s), avgKmh: Number(r.avg_kmh), date: r.created_at ? Date.parse(r.created_at) : null, mine: me !== null && r.tg_id === me
         });
       });
       return true;
     } catch (e) { return false; }
+  }
+
+  // Есть ли у вас ник (его задают в боте). 'ok' | 'none' | 'unknown' (нет сервера, не в Telegram или нет сети)
+  async function checkNick() {
+    const u = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user;
+    if (!serverOn() || !u) return 'unknown';
+    try {
+      const rows = await (await fetch(C.SUPABASE_URL + '/rest/v1/players?tg_id=eq.' + u.id + '&select=nick', { headers: hdr() })).json();
+      if (!Array.isArray(rows)) return 'unknown';
+      return rows.length && rows[0].nick ? 'ok' : 'none';
+    } catch (e) { return 'unknown'; }
   }
 
   // Отправить свой рекорд на сервер (сервер проверяет подпись Telegram). Свои трассы не отправляем.
@@ -105,6 +116,7 @@ STR.api = (function () {
   return {
     init,
     loadBoard,
+    checkNick,
     sendRecord,
     serverOn,
 

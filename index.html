@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=13 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=14 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=13">
+<link rel="stylesheet" href="css/style.css?v=14">
 </head>
 
 <body>
@@ -56,6 +56,19 @@
   <div id="routesList"></div>
 </div>
 
+<!-- Экран «сначала задайте ник» (если ника нет, он задаётся в боте) -->
+<div id="nickGate">
+  <div class="dlg">
+    <h3>Нужен ник</h3>
+    <p>Чтобы попасть в таблицы рекордов, придумайте ник: это делается в чате с ботом.
+Напишите боту /start и следуйте подсказке, потом вернитесь сюда.</p>
+    <div class="row">
+      <button class="cancel" id="nickLater">Позже</button>
+      <button id="nickClose">Закрыть и открыть чат</button>
+    </div>
+  </div>
+</div>
+
 <!-- Окно «Рекорды»: список трасс -> таблица рекордов трассы -->
 <div id="recordsOverlay">
   <div class="ov-head">
@@ -79,17 +92,17 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=13"></script>   <!-- настройки -->
-<script src="js/utils.js?v=13"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=13"></script>      <!-- карта -->
-<script src="js/ui.js?v=13"></script>       <!-- нижняя панель -->
-<script src="js/api.js?v=13"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=13"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=13"></script>     <!-- привязка к дорогам -->
-<script src="js/routes.js?v=13"></script>   <!-- окно «Трассы» -->
-<script src="js/confetti.js?v=13"></script> <!-- конфетти при рекорде -->
-<script src="js/records.js?v=13"></script>  <!-- окно «Рекорды» -->
-<script src="js/run.js?v=13"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=13"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=14"></script>   <!-- настройки -->
+<script src="js/utils.js?v=14"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=14"></script>      <!-- карта -->
+<script src="js/ui.js?v=14"></script>       <!-- нижняя панель -->
+<script src="js/api.js?v=14"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=14"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=14"></script>     <!-- привязка к дорогам -->
+<script src="js/routes.js?v=14"></script>   <!-- окно «Трассы» -->
+<script src="js/confetti.js?v=14"></script> <!-- конфетти при рекорде -->
+<script src="js/records.js?v=14"></script>  <!-- окно «Рекорды» -->
+<script src="js/run.js?v=14"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=14"></script>      <!-- запуск и кнопки -->
 </body>
 </html>
