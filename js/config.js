@@ -6,7 +6,7 @@ window.STR = window.STR || {};   // STR — общий «ящик» для вс�
 
 STR.config = {
   // --- Версия (меняйте вместе с ?v=... в index.html, чтобы телефон не показывал старый кэш) ---
-  VERSION: '12',
+  VERSION: '13',
 
   // --- Фильтрация GPS (см. gps.js) ---
   MAX_ACCURACY_M: 30,       // точки с погрешностью больше 30 м отбрасываем
@@ -38,7 +38,7 @@ STR.config = {
 
   // --- Сервер Supabase (общие рекорды, см. api.js) ---
   SUPABASE_URL: 'https://qywpwtwerjuxjgeslysd.supabase.co',
-  SUPABASE_KEY: 'sb_publishable_5vlGlUCE3tas5oTE7JnvIQ_jn03zIlc',    // сюда вставьте publishable (anon) ключ из Supabase -> Project Settings -> API Keys
+  SUPABASE_KEY: '',    // сюда вставьте publishable (anon) ключ из Supabase -> Project Settings -> API Keys
 
   // --- Данные (см. api.js) ---
   ROUTES_URL: 'data/routes.json',        // официальные трассы

@@ -31,14 +31,14 @@ STR.api = (function () {
   async function loadBoard() {
     if (!serverOn()) return false;
     try {
-      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,players(name)&order=time_s.asc&limit=1000';
+      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,created_at,players(name)&order=time_s.asc&limit=1000';
       const rows = await (await fetch(url, { headers: hdr() })).json();
       if (!Array.isArray(rows)) return false;
       const me = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user ? STR.tg.initDataUnsafe.user.id : null;
       board = {};
       rows.forEach(r => {
         (board[r.route_id] = board[r.route_id] || []).push({
-          name: (r.players && r.players.name) || 'Игрок', time: Number(r.time_s), avgKmh: Number(r.avg_kmh), mine: me !== null && r.tg_id === me
+          name: (r.players && r.players.name) || 'Игрок', time: Number(r.time_s), avgKmh: Number(r.avg_kmh), date: r.created_at ? Date.parse(r.created_at) : null, mine: me !== null && r.tg_id === me
         });
       });
       return true;
@@ -110,6 +110,8 @@ STR.api = (function () {
 
     // Лучший результат всех игроков на трассе или null
     getBest(routeId) { const l = board[String(routeId)]; return l && l.length ? l[0] : null; },
+    // Все результаты на трассе, от лучшего к худшему: [{ name, time, avgKmh, date, mine }]
+    getBoard(routeId) { return (board[String(routeId)] || []).slice(); },
     // Место игрока на трассе (1, 2…) или null
     getMyRank(routeId) { const l = board[String(routeId)] || []; const i = l.findIndex(x => x.mine); return i < 0 ? null : i + 1; },
 

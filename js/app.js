@@ -62,6 +62,8 @@
   $('saveBtn').addEventListener('click', () => lastRecording && STR.routes.openSaveDialog(lastRecording));
   $('saveCancel').addEventListener('click', STR.routes.closeSaveDialog);
   $('saveOk').addEventListener('click', STR.routes.save);
+  $('recordsBtn').addEventListener('click', STR.records.open);
+  $('recordsClose').addEventListener('click', STR.records.back);
   $('routesBtn').addEventListener('click', STR.routes.open);
   $('routesClose').addEventListener('click', STR.routes.close);
   $('locate').addEventListener('click', () => {
