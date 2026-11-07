@@ -73,9 +73,9 @@ button {
 }
 button:active { transform: scale(.98); filter: brightness(.9); }
 
-/* Идёт запись: красная рамка и «пульс» */
+/* Идёт запись или заезд: красная рамка и «пульс» */
 button.stop {
-  background: transparent; color: var(--accent); border: 2px solid var(--accent);
+  background: rgba(11,13,16,.94); color: var(--accent); border: 2px solid var(--accent);
   box-shadow: 0 0 0 0 rgba(255,45,61,.5); animation: pulse 1.6s infinite;
 }
 @keyframes pulse {
@@ -186,3 +186,17 @@ button.stop {
   margin-top: 8px; padding: 8px; font-size: 13px; border-radius: 10px; box-shadow: none;
   background: var(--card-hi); color: var(--text); border: 1px solid var(--line);
 }
+
+/* ---------- Круглая кнопка в правом нижнем углу (над панелью) ----------
+   «+» — начать запись; «■» — остановить запись; «✕» — отменить заезд. */
+#btn.fab {
+  position: absolute; right: 14px; top: -80px; z-index: 1000;
+  width: 56px; height: 56px; padding: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--accent);
+  box-shadow: 0 6px 20px rgba(255,45,61,.35), 0 0 0 1px rgba(0,0,0,.4);
+}
+#btn.fab svg { width: 26px; height: 26px; display: block; }
+#btn.fab.stop { box-shadow: 0 0 0 0 rgba(255,45,61,.5); }
+
+.route-card .rec.best { color: var(--ok); }   /* лучший результат среди всех игроков */

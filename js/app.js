@@ -29,7 +29,7 @@
   async function onStop() {
     const mine = session;
     const r = STR.gps.stop();
-    STR.ui.setRecording(false, '▶ Начать запись заново');
+    STR.ui.setRecording(false);
 
     const summary = `Запись завершена.\nТочек: ${r.points} · макс. пауза: ${Math.round(r.maxGap)} с · разрывов: ${r.breaks}\n` +
                     `Сворачивали приложение: ${r.hidden} раз`;
@@ -53,7 +53,12 @@
     STR.ui.showSave(true);
   }
 
-  $('btn').addEventListener('click', () => STR.gps.isRecording() ? onStop() : onStart());
+  $('btn').addEventListener('click', () => {
+    if (STR.run.isActive()) STR.run.cancel();            // идёт заезд: кнопка отменяет его
+    else if (STR.gps.isRecording()) onStop();
+    else onStart();
+  });
+  STR.ui.setFab('start');
   $('saveBtn').addEventListener('click', () => lastRecording && STR.routes.openSaveDialog(lastRecording));
   $('saveCancel').addEventListener('click', STR.routes.closeSaveDialog);
   $('saveOk').addEventListener('click', STR.routes.save);

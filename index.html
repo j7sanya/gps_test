@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=5 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=12 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=12">
 </head>
 
 <body>
@@ -40,7 +40,7 @@
       <div class="stat"><b id="sMax">0</b><span>км/ч макс.</span></div>
       <div class="stat"><b id="sGap">0</b><span>макс. пауза, с</span></div>
     </div>
-    <button id="btn">▶ Начать запись</button>
+    <button id="btn" class="fab" aria-label="Начать запись" title="Начать запись"></button>
     <button id="saveBtn">💾 Сохранить как трассу</button>
     <div id="status">Определяю ваше местоположение… Разрешите доступ к геолокации.</div>
   </div>
@@ -69,15 +69,16 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=5"></script>   <!-- настройки -->
-<script src="js/utils.js?v=5"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=5"></script>      <!-- карта -->
-<script src="js/ui.js?v=5"></script>       <!-- нижняя панель -->
-<script src="js/api.js?v=5"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=5"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=5"></script>     <!-- привязка к дорогам -->
-<script src="js/routes.js?v=5"></script>   <!-- окно «Трассы» -->
-<script src="js/run.js?v=5"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=5"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=12"></script>   <!-- настройки -->
+<script src="js/utils.js?v=12"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=12"></script>      <!-- карта -->
+<script src="js/ui.js?v=12"></script>       <!-- нижняя панель -->
+<script src="js/api.js?v=12"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=12"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=12"></script>     <!-- привязка к дорогам -->
+<script src="js/routes.js?v=12"></script>   <!-- окно «Трассы» -->
+<script src="js/confetti.js?v=12"></script> <!-- конфетти при рекорде -->
+<script src="js/run.js?v=12"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=12"></script>      <!-- запуск и кнопки -->
 </body>
 </html>

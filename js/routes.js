@@ -9,6 +9,7 @@ STR.routes = (function () {
   function open() {
     render();
     $('routesOverlay').classList.add('open');
+    STR.api.loadBoard().then(ok => { if (ok && $('routesOverlay').classList.contains('open')) render(); });   // подтягиваем общие рекорды
     try { STR.tg.BackButton.show(); STR.tg.BackButton.onClick(close); } catch (e) {}
   }
   function close() {
@@ -50,6 +51,15 @@ STR.routes = (function () {
         ? `🏆 Рекорд: ${U.fmtPrecise(rec.time)} · ${Math.round(rec.avgKmh)} км/ч средняя · ${U.fmtDate(rec.date)}`
         : '🏆 Рекорда пока нет';
 
+      const best = STR.api.getBest(r.id);   // лучший результат среди всех игроков (если подключён сервер)
+      let bestEl = null;
+      if (best) {
+        bestEl = document.createElement('div');
+        bestEl.className = 'rec best';
+        const rank = STR.api.getMyRank(r.id);
+        bestEl.textContent = `👑 Лучший: ${best.name} · ${U.fmtPrecise(best.time)}` + (rank ? ` · вы ${rank}-й` : '');
+      }
+
       const acts = document.createElement('div');
       acts.className = 'acts';
       const show = document.createElement('button');
@@ -65,7 +75,9 @@ STR.routes = (function () {
         acts.appendChild(del);
       }
 
-      card.append(name, meta, recEl, acts);
+      card.append(name, meta, recEl);
+      if (bestEl) card.appendChild(bestEl);
+      card.appendChild(acts);
       box.appendChild(card);
     });
   }

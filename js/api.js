@@ -21,6 +21,46 @@ STR.api = (function () {
 
   let official = [];   // трассы из data/routes.json
 
+  // ---------- Сервер (Supabase): общие рекорды ----------
+  // Работает, только если в config.js указан ключ. Без него приложение просто работает локально.
+  const serverOn = () => !!(C.SUPABASE_URL && C.SUPABASE_KEY);
+  const hdr = () => ({ apikey: C.SUPABASE_KEY, Authorization: 'Bearer ' + C.SUPABASE_KEY });
+  let board = {};      // лучшие результаты всех игроков: routeId -> [{ name, time, avgKmh, mine }]
+
+  // Загрузить таблицу рекордов (читать может любой, подпись не нужна)
+  async function loadBoard() {
+    if (!serverOn()) return false;
+    try {
+      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,players(name)&order=time_s.asc&limit=1000';
+      const rows = await (await fetch(url, { headers: hdr() })).json();
+      if (!Array.isArray(rows)) return false;
+      const me = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user ? STR.tg.initDataUnsafe.user.id : null;
+      board = {};
+      rows.forEach(r => {
+        (board[r.route_id] = board[r.route_id] || []).push({
+          name: (r.players && r.players.name) || 'Игрок', time: Number(r.time_s), avgKmh: Number(r.avg_kmh), mine: me !== null && r.tg_id === me
+        });
+      });
+      return true;
+    } catch (e) { return false; }
+  }
+
+  // Отправить свой рекорд на сервер (сервер проверяет подпись Telegram). Свои трассы не отправляем.
+  async function sendRecord(routeId, rec) {
+    const initData = STR.tg && STR.tg.initData;
+    if (!serverOn() || !initData || String(routeId).startsWith('local-')) return null;
+    try {
+      const resp = await fetch(C.SUPABASE_URL + '/functions/v1/api', {
+        method: 'POST',
+        headers: { ...hdr(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'record', initData, routeId: String(routeId), time: rec.time, avgKmh: rec.avgKmh })
+      });
+      const data = await resp.json();
+      if (data && data.ok) loadBoard();
+      return data;
+    } catch (e) { return null; }
+  }
+
   // Загружаем официальные трассы (вызывается один раз при запуске)
   async function init() {
     try {
@@ -64,6 +104,14 @@ STR.api = (function () {
 
   return {
     init,
+    loadBoard,
+    sendRecord,
+    serverOn,
+
+    // Лучший результат всех игроков на трассе или null
+    getBest(routeId) { const l = board[String(routeId)]; return l && l.length ? l[0] : null; },
+    // Место игрока на трассе (1, 2…) или null
+    getMyRank(routeId) { const l = board[String(routeId)] || []; const i = l.findIndex(x => x.mine); return i < 0 ? null : i + 1; },
 
     // Все трассы: сначала официальные, потом свои
     getRoutes() { return official.concat(localRoutes()); },

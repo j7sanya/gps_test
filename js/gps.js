@@ -35,7 +35,7 @@ STR.gps = (function () {
   // ---------- Пришла новая точка от GPS ----------
   function onPosition(pos) {
     const c = pos.coords;
-    const p = { lat: c.latitude, lon: c.longitude, t: pos.timestamp, acc: c.accuracy };
+    const p = { lat: c.latitude, lon: c.longitude, t: pos.timestamp, acc: c.accuracy, speed: c.speed };
 
     lastPos = p;
     STR.map.showMe(p);
@@ -43,7 +43,8 @@ STR.gps = (function () {
 
     // Пока запись не идёт, просто показываем, где мы находимся
     if (!rec) {
-      if (!s.stopT) U.setStatus(`Ваше местоположение определено (±${Math.round(p.acc)} м).\nНажмите «Начать запись».`);
+      const inRun = STR.run && (STR.run.isActive() || STR.run.isDone());   // во время заезда и на экране результата статус не затираем
+      if (!s.stopT && !inRun) U.setStatus(`Ваше местоположение определено (±${Math.round(p.acc)} м).\nНажмите «Начать запись».`);
       return;
     }
 

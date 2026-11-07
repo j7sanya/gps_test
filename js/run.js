@@ -23,6 +23,7 @@ STR.run = (function () {
   let cooldownUntil = 0;                // до какого момента (время GPS, мс) не стартуем новый заезд
   const filter = { last: null, speed: null };   // собственный фильтр GPS-точек для заездов
   let pending = null;                   // пересечена линия старта, ждём подтверждения (см. RUN_START_CONFIRM_M)
+  let lastPanelT = 0;                   // когда в последний раз обновляли нижнюю панель
 
   // ---------- Геометрия ----------
   const unit = (dx, dy) => { const l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
@@ -110,7 +111,9 @@ STR.run = (function () {
 
   function tick() {
     if (!run) return;
-    $('runTime').textContent = U.fmtPrecise((Date.now() - run.t0) / 1000);
+    const now = Date.now();
+    $('runTime').textContent = U.fmtPrecise((now - run.t0) / 1000);
+    if (now - lastPanelT > 250) { lastPanelT = now; STR.ui.render(run.stats); }   // время в нижней панели идёт плавно
     rafId = requestAnimationFrame(tick);
   }
   function stopTick() {
@@ -128,14 +131,22 @@ STR.run = (function () {
 
   // ---------- Ход заезда ----------
   function startRun(pr, t0, B) {
-    run = { pr, t0, progress: 0, lost: false, invalid: false, reason: '', farSince: null };
+    // stats — цифры для нижней панели (те же, что при записи маршрута)
+    const g = pr.start, Q = pr.toXY(B);
+    const along = Math.max(0, (Q[0] - g.c[0]) * g.d[0] + (Q[1] - g.c[1]) * g.d[1]);   // сколько уже отъехали от линии старта
+    run = {
+      pr, t0, progress: 0, lost: false, invalid: false, reason: '', farSince: null,
+      stats: { startT: t0, stopT: null, distance: along, speedNow: filter.speed || 0, maxSpeed: 0, maxGap: 0, points: 0 }
+    };
     mode = 'running';
+    STR.ui.setRunning(true);                     // кнопка внизу справа становится «отменить заезд»
     showBanner(pr.name);
     $('runTime').textContent = '00:00.00';
     STR.map.showRoute(pr.lines, false);          // трасса сразу появляется на карте
     if (STR.gps.holdScreen) STR.gps.holdScreen();  // экран не гаснет
     U.setStatus(`Заезд «${pr.name}» начался!`);
     updateRun(null, B, false);
+    if (run) STR.ui.render(run.stats);
     tick();
   }
 
@@ -198,18 +209,26 @@ STR.run = (function () {
 
     let info;
     let bad = false;
+    let isRecord = false;
     if (run.invalid) {
       bad = true;
       info = `Рекорд не засчитан: ${run.reason}.`;
     } else if (STR.api.submitRecord(pr.id, { time, avgKmh: avg, date: Date.now() })) {
+      isRecord = true;
       info = prev ? `🏆 Новый рекорд! Лучше на ${(prev.time - time).toFixed(2)} с` : '🏆 Первый рекорд на этой трассе!';
     } else {
       info = `Рекорд: ${U.fmtPrecise(prev.time)} (вы медленнее на ${(time - prev.time).toFixed(2)} с)`;
     }
 
+    // Нижняя панель показывает итоги заезда: время до сотых берётся из t1, длина — длина трассы
+    run.stats.stopT = t1;
+    run.stats.distance = pr.distance;
+    STR.ui.render(run.stats);
+
     stopTick();
     run = null;
     mode = 'done';
+    STR.ui.setRunning(false);
     cooldownUntil = t1 + C.RUN_COOLDOWN_S * 1000;
     $('runBanner').classList.toggle('bad', bad);
     $('runName').textContent = '🏁 Финиш · ' + pr.name;
@@ -218,6 +237,8 @@ STR.run = (function () {
     $('runBtn').textContent = 'Закрыть';
     if (STR.gps.releaseScreen) STR.gps.releaseScreen();
     U.setStatus(`Финиш! Время: ${U.fmtPrecise(time)}`);
+    if (isRecord) STR.api.sendRecord(pr.id, { time, avgKmh: avg });   // общий рекорд на сервер (если подключён)
+    if (isRecord && STR.confetti) STR.confetti.fire();   // новый рекорд — конфетти
   }
 
   function abort(text) {
@@ -230,9 +251,11 @@ STR.run = (function () {
     stopTick();
     run = null;
     mode = 'idle';
+    if (!STR.gps.isRecording()) STR.ui.setRunning(false);
     hideBanner();
     STR.map.clearRoute();
     if (STR.gps.releaseScreen) STR.gps.releaseScreen();
+    if (!STR.gps.isRecording()) STR.ui.clearStats();   // цифры заезда убираем из панели
   }
 
   // ---------- Поток GPS-точек ----------
@@ -247,17 +270,40 @@ STR.run = (function () {
     // Длинная пауза: отрезок через пустоту не используем
     if (dt > C.GAP_BREAK_S) {
       filter.last = p; filter.speed = null;
-      if (run) updateRun(null, p, true);
+      if (run) {
+        run.stats.maxGap = Math.max(run.stats.maxGap, dt);
+        run.stats.speedNow = 0;
+        updateRun(null, p, true);
+        if (run) STR.ui.render(run.stats);
+      }
       return;
     }
 
-    const v = U.haversine(A, p) / dt;
+    const d = U.haversine(A, p);
+    const v = d / dt;
     // Отбрасываем GPS-скачки (слишком быстро / слишком резкое ускорение)
     if (v > C.MAX_SPEED_MS || (filter.speed !== null && Math.abs(v - filter.speed) > C.MAX_ACCEL * dt + 3)) return;
     filter.speed = filter.speed === null ? v : filter.speed * 0.5 + v * 0.5;
     filter.last = p;
 
-    if (run) { updateRun(A, p, false); return; }
+    if (run) {
+      // Цифры для нижней панели: так же, как при записи маршрута (gps.js)
+      const st = run.stats;
+      st.maxGap = Math.max(st.maxGap, dt);
+      if (v >= C.STANDING_SPEED_MS) st.distance += d;
+      let sp = (p.speed != null && p.speed >= 0 && Math.abs(p.speed - v) < 4) ? p.speed : v;
+      if (v < C.STANDING_SPEED_MS) sp = 0;
+      st.speedNow = st.speedNow * 0.5 + sp * 0.5;
+      st.points++;
+      if (st.points >= C.MIN_POINTS_FOR_MAX) st.maxSpeed = Math.max(st.maxSpeed, st.speedNow);
+
+      updateRun(A, p, false);
+      if (run) {   // заезд мог закончиться или прерваться
+        STR.ui.render(run.stats);
+        U.setStatus(`Заезд идёт · точность GPS ±${Math.round(p.acc)} м`);
+      }
+      return;
+    }
 
     // Ищем старт: не во время записи нового маршрута и не сразу после финиша
     if (STR.gps.isRecording() || p.t < cooldownUntil) { pending = null; return; }
@@ -291,5 +337,5 @@ STR.run = (function () {
   // Кнопка в баннере: «Отменить заезд» / «Закрыть»
   $('runBtn').addEventListener('click', cancel);
 
-  return { refresh, onFix, cancel, isActive: () => mode === 'running' };
+  return { refresh, onFix, cancel, isActive: () => mode === 'running', isDone: () => mode === 'done' };
 })();
