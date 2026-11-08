@@ -24,19 +24,19 @@ STR.profile = (function () {
 
   function render() {
     const box = $('profileBody'); box.textContent = '';
-    const tgUser = (STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user) || null;
     const me = STR.api.getMe();
     const nick = me && me.nick;
 
     // ----- Шапка: аватар, ник, ID, статус -----
     const top = el('pf-top');
     const ava = el('pf-ava');
-    if (tgUser && tgUser.photo_url) {          // фото берём из Telegram, на сервер не сохраняем
+    const fallback = () => { ava.textContent = (nick || '?')[0].toUpperCase(); };
+    if (me && me.avatar_url) {                  // аватар, который вы выбрали в боте (/avatar)
       const img = document.createElement('img');
-      img.src = tgUser.photo_url; img.alt = '';
-      img.onerror = () => { ava.textContent = (nick || '?')[0].toUpperCase(); };
+      img.src = me.avatar_url; img.alt = '';
+      img.onerror = () => { img.remove(); fallback(); };
       ava.appendChild(img);
-    } else ava.textContent = (nick || '?')[0].toUpperCase();
+    } else fallback();                          // без аватара: первая буква ника
 
     const info = el('pf-info');
     info.appendChild(el('pf-nick', nick || 'Без ника'));

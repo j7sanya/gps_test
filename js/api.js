@@ -62,7 +62,7 @@ STR.api = (function () {
     const u = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user;
     if (!serverOn() || !u) return null;
     try {
-      const rows = await (await fetch(C.SUPABASE_URL + '/rest/v1/players?tg_id=eq.' + u.id + '&select=nick,num,bio', { headers: hdr() })).json();
+      const rows = await (await fetch(C.SUPABASE_URL + '/rest/v1/players?tg_id=eq.' + u.id + '&select=nick,num,bio,avatar_url', { headers: hdr() })).json();
       me = Array.isArray(rows) && rows.length ? rows[0] : null;
     } catch (e) {}
     return me;
