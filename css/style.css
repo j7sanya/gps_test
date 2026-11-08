@@ -44,7 +44,7 @@ html, body {
 /* ---------- Нижняя панель ---------- */
 #panel {
   position: relative;
-  padding: 12px 12px calc(10px + env(safe-area-inset-bottom));
+  padding: 12px 12px calc(84px + env(safe-area-inset-bottom));   /* нижний отступ поднимает плашку со статистикой */
   background: linear-gradient(180deg, var(--panel), #0d1015);
   border-top: 1px solid var(--line);
 }
@@ -324,7 +324,7 @@ body.building #locate { top: 12px; }
 
 /* ---------- Всплывающие сообщения ---------- */
 #toast {
-  position: fixed; left: 14px; right: 86px; bottom: 200px; transform: translateY(16px); z-index: 4800;
+  position: fixed; left: 14px; right: 86px; bottom: 280px; transform: translateY(16px); z-index: 4800;
   padding: 11px 14px; border-radius: 14px;
   background: rgba(22,26,33,.96); border: 1px solid var(--line); border-left: 4px solid var(--accent);
   color: var(--text); font-size: 13px; line-height: 1.4; white-space: pre-line; text-align: left;
