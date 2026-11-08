@@ -111,6 +111,7 @@ button.stop {
   flex-direction: column; background: var(--bg); color: var(--text);
 }
 #routesOverlay.open, #recordsOverlay.open, #profileOverlay.open { display: flex; }
+#profileOverlay { z-index: 3500; }   /* профиль открывается и поверх окна «Рекорды» */
 .ov-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel);
@@ -316,3 +317,7 @@ body.building #locate { top: 12px; }
 .dlg .share-row b { display: block; font-size: 15px; }
 .dlg .share-row small { display: block; font-size: 12px; color: var(--hint); margin-top: 2px; line-height: 1.35; }
 .dlg .share-row.off { opacity: .55; }
+
+/* Ник-ссылка в «Рекордах»: нажатие открывает профиль игрока */
+.link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+.link:active { opacity: .6; }

@@ -9,6 +9,17 @@ STR.records = (function () {
   const el = (cls, text, tag) => { const e = document.createElement(tag || 'div'); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
   const isOpen = () => $('recordsOverlay').classList.contains('open');
 
+  // Ник-ссылка: нажатие открывает профиль игрока (свой ник — ваш профиль)
+  function nickLink(x, tag) {
+    const e = el('link', x.name, tag || 'span');
+    e.onclick = ev => {
+      ev.stopPropagation();
+      if (x.mine) STR.profile.open();
+      else if (x.num != null) STR.profile.openOther(x.num, x.name);
+    };
+    return e;
+  }
+
   function open() {
     current = null;
     render();
@@ -43,8 +54,10 @@ STR.records = (function () {
       const best = STR.api.getBest(r.id);
       const mine = STR.api.getRecord(r.id);
       grow.appendChild(el('meta', `📏 ${U.fmtKm(r.distance)}` + (total ? ` · участников: ${total}` : '')));
-      const line = best ? `👑 ${best.name} · ${U.fmtPrecise(best.time)}` : (mine ? `🏆 Ваш: ${U.fmtPrecise(mine.time)}` : 'Рекордов пока нет');
-      grow.appendChild(el('rec' + (best || mine ? ' has' : ''), line));
+      const recLine = el('rec' + (best || mine ? ' has' : ''));
+      if (best) { recLine.append('👑 ', nickLink(best), ` · ${U.fmtPrecise(best.time)}`); }
+      else recLine.textContent = mine ? `🏆 Ваш: ${U.fmtPrecise(mine.time)}` : 'Рекордов пока нет';
+      grow.appendChild(recLine);
       card.appendChild(grow);
       const rank = STR.api.getMyRank(r.id);
       if (rank) card.appendChild(el('rank me', `#${rank}`));
@@ -87,7 +100,8 @@ STR.records = (function () {
       const row = el('lb-row' + (i < 3 ? ' p' + (i + 1) : '') + (x.mine ? ' me' : ''));
       row.appendChild(el('pos', i === 0 ? '👑' : String(i + 1)));
       const who = el('who');
-      who.appendChild(el('', x.mine ? `${x.name} (вы)` : x.name, 'b'));
+      const nm = el('', undefined, 'b'); nm.appendChild(nickLink(x)); if (x.mine) nm.append(' (вы)');
+      who.appendChild(nm);
       who.appendChild(el('', `${Math.round(x.avgKmh)} км/ч` + (x.date ? ` · ${U.fmtDate(x.date)}` : ''), 'span'));
       row.appendChild(who);
       row.appendChild(el('t', U.fmtPrecise(x.time)));
@@ -95,5 +109,5 @@ STR.records = (function () {
     });
   }
 
-  return { open, close, back };
+  return { open, close, back, isOpen };
 })();

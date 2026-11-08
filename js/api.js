@@ -31,14 +31,14 @@ STR.api = (function () {
   async function loadBoard() {
     if (!serverOn()) return false;
     try {
-      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,created_at,players(nick)&order=time_s.asc&limit=1000';
+      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,created_at,players(nick,num)&order=time_s.asc&limit=1000';
       const rows = await (await fetch(url, { headers: hdr() })).json();
       if (!Array.isArray(rows)) return false;
       const me = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user ? STR.tg.initDataUnsafe.user.id : null;
       board = {};
       rows.forEach(r => {
         (board[r.route_id] = board[r.route_id] || []).push({
-          name: (r.players && r.players.nick) || 'Игрок', time: Number(r.time_s), avgKmh: Number(r.avg_kmh), date: r.created_at ? Date.parse(r.created_at) : null, mine: me !== null && r.tg_id === me
+          name: (r.players && r.players.nick) || 'Игрок', num: r.players ? r.players.num : null, time: Number(r.time_s), avgKmh: Number(r.avg_kmh), date: r.created_at ? Date.parse(r.created_at) : null, mine: me !== null && r.tg_id === me
         });
       });
       return true;
@@ -93,6 +93,15 @@ STR.api = (function () {
     const r = await callServer({ action: 'publish_route', name: route.name, lines: route.lines });
     if (r && r.ok) await loadPublicRoutes();
     return r;
+  }
+
+  // Чужой профиль по номеру (ID в приложении): { nick, num, bio, avatar_url } или null
+  async function loadPlayer(num) {
+    if (!serverOn()) return null;
+    try {
+      const rows = await (await fetch(C.SUPABASE_URL + '/rest/v1/players?num=eq.' + encodeURIComponent(num) + '&select=nick,num,bio,avatar_url', { headers: hdr() })).json();
+      return Array.isArray(rows) && rows.length ? rows[0] : null;
+    } catch (e) { return null; }
   }
 
   // Ваш профиль на сервере: { nick, num, bio } или null
@@ -188,6 +197,7 @@ STR.api = (function () {
     init,
     loadBoard,
     loadMe,
+    loadPlayer,
     saveBio,
     getMe: () => me,
     getMeError: () => meError,
@@ -224,6 +234,22 @@ STR.api = (function () {
 
     // Лучший результат всех игроков на трассе или null
     getBest(routeId) { const l = board[String(routeId)]; return l && l.length ? l[0] : null; },
+    // Результаты игрока (по номеру профиля) на всех трассах: места, время, средняя скорость
+    getPlayerResults(num) {
+      const out = [];
+      Object.keys(board).forEach(id => {
+        const i = board[id].findIndex(x => x.num === num);
+        if (i < 0) return;
+        const route = (official.concat(pubRoutes)).find(r => String(r.id) === id) || localRoutes().find(r => String(r.id) === id);
+        if (!route) return;   // трасса удалена
+        const x = board[id][i];
+        out.push({ routeId: id, routeName: route.name, rank: i + 1, total: board[id].length, time: x.time, avgKmh: x.avgKmh });
+      });
+      return out.sort((a, b) => a.rank - b.rank || a.time - b.time);
+    },
+    // Сколько публичных трасс создал игрок с таким ником
+    countRoutesBy(nick) { return pubRoutes.filter(r => r.author === nick).length; },
+
     // Все результаты на трассе, от лучшего к худшему: [{ name, time, avgKmh, date, mine }]
     getBoard(routeId) { return (board[String(routeId)] || []).slice(); },
     // Место игрока на трассе (1, 2…) или null
