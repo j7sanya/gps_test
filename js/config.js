@@ -6,7 +6,7 @@ window.STR = window.STR || {};   // STR — общий «ящик» для вс�
 
 STR.config = {
   // --- Версия (меняйте вместе с ?v=... в index.html, чтобы телефон не показывал старый кэш) ---
-  VERSION: '14',
+  VERSION: '15',
 
   // --- Фильтрация GPS (см. gps.js) ---
   MAX_ACCURACY_M: 30,       // точки с погрешностью больше 30 м отбрасываем
@@ -43,6 +43,8 @@ STR.config = {
   // --- Данные (см. api.js) ---
   ROUTES_URL: 'data/routes.json',        // официальные трассы
   STORE_ROUTES: 'strace_routes_v1',      // свои трассы на этом телефоне
+  STORE_RUNS: 'strace_runs_v1',          // история ваших заездов на этом телефоне
+  STORE_BIO: 'strace_bio_v1',            // статус профиля (копия на телефоне)
   STORE_RECORDS: 'strace_records_v1',    // рекорды на этом телефоне
   ROUTE_MAX_POINTS: 400                  // сколько точек хранить на один участок трассы
 };

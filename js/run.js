@@ -220,6 +220,12 @@ STR.run = (function () {
       info = `Рекорд: ${U.fmtPrecise(prev.time)} (вы медленнее на ${(time - prev.time).toFixed(2)} с)`;
     }
 
+    // История заездов (нужна для профиля)
+    STR.api.addRun({
+      routeId: pr.id, routeName: pr.name, time, avgKmh: avg, maxKmh: Math.max(avg, run.stats.maxSpeed * 3.6),
+      dist: pr.distance, date: Date.now(), valid: !run.invalid, record: isRecord
+    });
+
     // Нижняя панель показывает итоги заезда: время до сотых берётся из t1, длина — длина трассы
     run.stats.stopT = t1;
     run.stats.distance = pr.distance;

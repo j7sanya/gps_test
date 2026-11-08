@@ -64,6 +64,8 @@
   $('saveOk').addEventListener('click', STR.routes.save);
   $('recordsBtn').addEventListener('click', STR.records.open);
   $('recordsClose').addEventListener('click', STR.records.back);
+  $('profileBtn').addEventListener('click', STR.profile.open);
+  $('profileClose').addEventListener('click', STR.profile.close);
   $('routesBtn').addEventListener('click', STR.routes.open);
   $('routesClose').addEventListener('click', STR.routes.close);
   $('locate').addEventListener('click', () => {

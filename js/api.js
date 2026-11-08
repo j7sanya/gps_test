@@ -56,6 +56,35 @@ STR.api = (function () {
     } catch (e) { return 'unknown'; }
   }
 
+  // Ваш профиль на сервере: { nick, num, bio } или null
+  let me = null;
+  async function loadMe() {
+    const u = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user;
+    if (!serverOn() || !u) return null;
+    try {
+      const rows = await (await fetch(C.SUPABASE_URL + '/rest/v1/players?tg_id=eq.' + u.id + '&select=nick,num,bio', { headers: hdr() })).json();
+      me = Array.isArray(rows) && rows.length ? rows[0] : null;
+    } catch (e) {}
+    return me;
+  }
+
+  // Сохранить статус профиля (на телефоне всегда, на сервер — если есть подключение и ник)
+  async function saveBio(text) {
+    text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    writeJSON(C.STORE_BIO, text);
+    if (me) me.bio = text || null;
+    const initData = STR.tg && STR.tg.initData;
+    if (serverOn() && initData && me) {
+      try {
+        await fetch(C.SUPABASE_URL + '/functions/v1/api', {
+          method: 'POST', headers: { ...hdr(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'bio', initData, bio: text })
+        });
+      } catch (e) {}
+    }
+    return text;
+  }
+
   // Отправить свой рекорд на сервер (сервер проверяет подпись Telegram). Свои трассы не отправляем.
   async function sendRecord(routeId, rec) {
     const initData = STR.tg && STR.tg.initData;
@@ -116,9 +145,39 @@ STR.api = (function () {
   return {
     init,
     loadBoard,
+    loadMe,
+    saveBio,
+    getMe: () => me,
+    getBio() { return (me && me.bio) || readJSON(C.STORE_BIO, ''); },
     checkNick,
     sendRecord,
     serverOn,
+
+    // ----- История заездов (на этом телефоне) -----
+    addRun(run) {
+      const list = readJSON(C.STORE_RUNS, []);
+      list.push(run);
+      writeJSON(C.STORE_RUNS, list.slice(-500));
+    },
+    getRuns() { return readJSON(C.STORE_RUNS, []); },
+    // Личная статистика по истории заездов
+    getStats() {
+      const runs = readJSON(C.STORE_RUNS, []);
+      let dist = 0, secs = 0, maxKmh = 0, bestAvg = 0;
+      runs.forEach(r => {
+        dist += r.dist || 0; secs += r.time || 0;
+        maxKmh = Math.max(maxKmh, r.maxKmh || 0); bestAvg = Math.max(bestAvg, r.avgKmh || 0);
+      });
+      return {
+        runs: runs.length,
+        records: Object.keys(readJSON(C.STORE_RECORDS, {})).length,
+        km: dist / 1000,
+        avgKmh: secs > 0 ? (dist / secs) * 3.6 : 0,   // средняя за всё время в пути
+        maxKmh, bestAvg
+      };
+    },
+    // Сколько трасс, где вы на 1-м месте (по общим рекордам)
+    getFirstPlaces() { return Object.keys(board).filter(id => board[id][0] && board[id][0].mine).length; },
 
     // Лучший результат всех игроков на трассе или null
     getBest(routeId) { const l = board[String(routeId)]; return l && l.length ? l[0] : null; },
