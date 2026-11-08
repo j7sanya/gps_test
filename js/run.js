@@ -267,6 +267,7 @@ STR.run = (function () {
   // ---------- Поток GPS-точек ----------
   // Сюда gps.js присылает каждую новую точку.
   function onFix(p) {
+    if (STR.builder && STR.builder.isActive()) return;   // пока рисуем трассу, заезды не стартуют
     if (p.acc > C.MAX_ACCURACY_M) return;
     const A = filter.last;
     if (!A) { filter.last = p; return; }

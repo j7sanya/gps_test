@@ -17,6 +17,8 @@ STR.map = (function () {
   let first = true;
 
   return {
+    raw: () => map,   // сама карта Leaflet: нужна только конструктору трасс (builder.js)
+
     // Показать «синюю точку» — где я. При первом определении центрируем карту.
     showMe(p) {
       me.setLatLng([p.lat, p.lon]);

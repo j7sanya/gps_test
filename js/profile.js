@@ -40,8 +40,9 @@ STR.profile = (function () {
 
     const info = el('pf-info');
     info.appendChild(el('pf-nick', nick || 'Без ника'));
-    info.appendChild(el('pf-id', me && me.num ? 'ID: ' + me.num : (nick ? 'ID: —' : 'Задайте ник: напишите боту /start')));
+    info.appendChild(el('pf-id', me && me.num ? 'ID: ' + me.num : (nick ? 'ID: —' : 'Профиль не загружен')));
     info.appendChild(bioRow());
+    if (!nick && STR.api.getMeError()) info.appendChild(el('pf-id', 'Причина: ' + STR.api.getMeError()));
     top.append(ava, info);
     box.appendChild(top);
 

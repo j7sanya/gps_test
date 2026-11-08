@@ -53,11 +53,18 @@
     STR.ui.showSave(true);
   }
 
+  // Круглая кнопка: идёт заезд — отмена; идёт запись — стоп; иначе спрашиваем, как создать трассу
+  const sheet = $('createSheet');
+  const closeSheet = () => sheet.classList.remove('open');
   $('btn').addEventListener('click', () => {
-    if (STR.run.isActive()) STR.run.cancel();            // идёт заезд: кнопка отменяет его
+    if (STR.run.isActive()) STR.run.cancel();
     else if (STR.gps.isRecording()) onStop();
-    else onStart();
+    else sheet.classList.add('open');
   });
+  $('shDraw').addEventListener('click', () => { closeSheet(); STR.builder.enter(); });
+  $('shRecord').addEventListener('click', () => { closeSheet(); onStart(); });
+  $('shCancel').addEventListener('click', closeSheet);
+  sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
   STR.ui.setFab('start');
   $('saveBtn').addEventListener('click', () => lastRecording && STR.routes.openSaveDialog(lastRecording));
   $('saveCancel').addEventListener('click', STR.routes.closeSaveDialog);
@@ -80,5 +87,6 @@
 
   // Запуск: грузим официальные трассы и сразу определяем местоположение
   STR.api.init().then(() => STR.run.refresh());
+  STR.api.loadPublicRoutes().then(ok => { if (ok) STR.run.refresh(); });   // публичные трассы других игроков
   STR.gps.startWatching();
 })();

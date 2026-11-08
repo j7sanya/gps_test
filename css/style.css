@@ -267,3 +267,52 @@ button.stop {
 .pf-row b { font-family: var(--mono); font-size: 16px; color: var(--text); }
 .pf-row b small { font-size: 12px; color: var(--hint); font-weight: 600; }
 .pf-free { height: 110px; }   /* свободное место: сюда позже можно добавить рейтинг */
+
+/* ---------- Выбор способа создания трассы ---------- */
+#createSheet {
+  display: none; position: fixed; inset: 0; z-index: 4500; background: rgba(0,0,0,.6);
+  align-items: flex-end; justify-content: center;
+}
+#createSheet.open { display: flex; }
+#createSheet .sheet {
+  width: 100%; max-width: 480px; background: var(--panel); border-top: 1px solid var(--line);
+  border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px;
+}
+#createSheet h3 { margin: 0 0 4px; font-size: 18px; font-weight: 800; }
+#createSheet button { text-align: left; padding: 14px 16px; }
+#createSheet button small { display: block; font-size: 12px; font-weight: 400; opacity: .85; margin-top: 2px; letter-spacing: 0; }
+#createSheet button.alt { background: var(--card-hi); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+#createSheet button.cancel { text-align: center; background: transparent; color: var(--hint); box-shadow: none; }
+
+/* ---------- Конструктор трассы ---------- */
+#buildPanel { display: none; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line); }
+body.building #buildPanel { display: block; }
+body.building #panel, body.building #routesBtn, body.building #recordsBtn, body.building #profileBtn, body.building #runBanner { display: none !important; }
+body.building #locate { top: 12px; }
+#buildPanel .b-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+#buildLen { font-family: var(--mono); font-size: 24px; white-space: nowrap; }
+#buildHint { font-size: 13px; color: var(--hint); line-height: 1.35; }
+#buildHint.err { color: var(--bad); }
+#buildPanel button { padding: 13px; font-size: 15px; }
+#buildPanel button:disabled { opacity: .4; box-shadow: none; }
+#buildPanel .b-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+#buildPanel .b-small, #buildPanel .cancel { background: var(--card-hi); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+#buildPanel .b-row .b-small { flex: 1; padding: 10px; font-size: 14px; }
+#bRetry { display: none; width: auto; margin: 0 0 8px; padding: 8px 14px !important; font-size: 13px !important; }
+.b-loop { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text); white-space: nowrap; padding: 0 6px; }
+.b-loop input { width: 20px; height: 20px; accent-color: var(--accent); }
+.crosshair { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; z-index: 600; pointer-events: none; }
+.bm {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid #0b0d10; background: #fff; color: #0b0d10;
+  display: flex; align-items: center; justify-content: center; font: 800 12px/1 sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.6);
+}
+.bm.fin { background: #ff2d3d; color: #fff; }
+.bm.via { background: #c9d1dc; width: 22px; height: 22px; margin: 2px; }
+
+/* Галочка «Видят все» в окне сохранения */
+.dlg .share-row { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 14px; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+.dlg .share-row input { width: 20px; height: 20px; margin: 2px 0 0; padding: 0; accent-color: var(--accent); flex: none; }
+.dlg .share-row b { display: block; font-size: 15px; }
+.dlg .share-row small { display: block; font-size: 12px; color: var(--hint); margin-top: 2px; line-height: 1.35; }
+.dlg .share-row.off { opacity: .55; }

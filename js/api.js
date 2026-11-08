@@ -56,15 +56,57 @@ STR.api = (function () {
     } catch (e) { return 'unknown'; }
   }
 
+  // ---------- Публичные трассы (видят все) ----------
+  let pubRoutes = [];
+  const myTgId = () => { const u = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user; return u ? u.id : null; };
+
+  async function loadPublicRoutes() {
+    if (!serverOn()) return false;
+    try {
+      const url = C.SUPABASE_URL + '/rest/v1/routes?select=id,name,distance,lines,owner,created_at,players(nick)&order=created_at.desc&limit=200';
+      const rows = await (await fetch(url, { headers: hdr() })).json();
+      if (!Array.isArray(rows)) return false;
+      const me = myTgId();
+      pubRoutes = rows.map(r => ({
+        id: 'pub-' + r.id, name: r.name, distance: Number(r.distance), lines: r.lines,
+        local: false, public: true, author: (r.players && r.players.nick) || 'Игрок', mine: me !== null && r.owner === me
+      }));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  // Вызов серверной функции (с проверкой подписи Telegram). Возвращает ответ или { error } при сбое.
+  async function callServer(payload) {
+    const initData = STR.tg && STR.tg.initData;
+    if (!serverOn() || !initData) return { error: 'offline' };
+    try {
+      const resp = await fetch(C.SUPABASE_URL + '/functions/v1/api', {
+        method: 'POST', headers: { ...hdr(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, initData })
+      });
+      return await resp.json();
+    } catch (e) { return { error: 'network' }; }
+  }
+
+  // Опубликовать трассу: { name, lines }. Ответ: { ok, id } или { error: 'limit' | 'nick' | 'short' | ... }
+  async function publishRoute(route) {
+    const r = await callServer({ action: 'publish_route', name: route.name, lines: route.lines });
+    if (r && r.ok) await loadPublicRoutes();
+    return r;
+  }
+
   // Ваш профиль на сервере: { nick, num, bio } или null
-  let me = null;
+  let me = null, meError = '';
   async function loadMe() {
     const u = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user;
-    if (!serverOn() || !u) return null;
+    if (!serverOn()) { meError = 'в js/config.js не вписан ключ SUPABASE_KEY (или файл не обновлён на GitHub)'; return null; }
+    if (!u) { meError = 'приложение открыто не из Telegram'; return null; }
     try {
       const rows = await (await fetch(C.SUPABASE_URL + '/rest/v1/players?tg_id=eq.' + u.id + '&select=nick,num,bio,avatar_url', { headers: hdr() })).json();
-      me = Array.isArray(rows) && rows.length ? rows[0] : null;
-    } catch (e) {}
+      if (!Array.isArray(rows)) { me = null; meError = 'сервер ответил ошибкой: ' + (rows && (rows.message || rows.hint) || 'неизвестно') + ' (возможно, не выполнены SQL-файлы в Supabase)'; return null; }
+      me = rows.length ? rows[0] : null;
+      meError = me ? '' : 'в базе нет вашего профиля: пройдите /start в боте';
+    } catch (e) { meError = 'нет связи с сервером'; }
     return me;
   }
 
@@ -148,6 +190,7 @@ STR.api = (function () {
     loadMe,
     saveBio,
     getMe: () => me,
+    getMeError: () => meError,
     getBio() { return (me && me.bio) || readJSON(C.STORE_BIO, ''); },
     checkNick,
     sendRecord,
@@ -186,8 +229,12 @@ STR.api = (function () {
     // Место игрока на трассе (1, 2…) или null
     getMyRank(routeId) { const l = board[String(routeId)] || []; const i = l.findIndex(x => x.mine); return i < 0 ? null : i + 1; },
 
-    // Все трассы: сначала официальные, потом свои
-    getRoutes() { return official.concat(localRoutes()); },
+    // Все трассы: официальные, публичные (от игроков), потом ваши локальные
+    getRoutes() { return official.concat(pubRoutes, localRoutes()); },
+    loadPublicRoutes,
+    publishRoute,
+    // Сколько публичных трасс создали вы
+    myPublicCount() { return pubRoutes.filter(r => r.mine).length; },
 
     // Добавить свою трассу. Возвращает true, если удалось сохранить.
     addRoute(route) {
@@ -197,12 +244,22 @@ STR.api = (function () {
     },
 
     // Удалить свою трассу (официальные удалить нельзя) вместе с её рекордом
-    deleteRoute(id) {
+    async deleteRoute(id) {
       id = String(id);
+      if (id.startsWith('pub-')) {   // публичная трасса: удаляем на сервере (вместе с рекордами на ней)
+        const r = await callServer({ action: 'delete_route', routeId: id });
+        if (!r || !r.ok) return false;
+        await loadPublicRoutes();
+        const recs0 = readJSON(C.STORE_RECORDS, {});
+        delete recs0[id];
+        writeJSON(C.STORE_RECORDS, recs0);
+        return true;
+      }
       writeJSON(C.STORE_ROUTES, readJSON(C.STORE_ROUTES, []).filter(r => String(r.id) !== id));
       const recs = readJSON(C.STORE_RECORDS, {});
       delete recs[id];
       writeJSON(C.STORE_RECORDS, recs);
+      return true;
     },
 
     // Рекорд на трассе: { time (секунды), avgKmh, date } или null

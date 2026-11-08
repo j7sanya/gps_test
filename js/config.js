@@ -6,7 +6,7 @@ window.STR = window.STR || {};   // STR — общий «ящик» для вс�
 
 STR.config = {
   // --- Версия (меняйте вместе с ?v=... в index.html, чтобы телефон не показывал старый кэш) ---
-  VERSION: '16',
+  VERSION: '19',
 
   // --- Фильтрация GPS (см. gps.js) ---
   MAX_ACCURACY_M: 30,       // точки с погрешностью больше 30 м отбрасываем
@@ -36,9 +36,16 @@ STR.config = {
   RUN_MAX_DURATION_S: 7200,           // заезд дольше 2 часов прерывается
   RUN_COOLDOWN_S: 5,                  // пауза после финиша перед следующим стартом
 
+  // --- Создание трасс (см. builder.js) ---
+  ROUTE_MIN_M: 300,                   // трасса короче 300 м не создаётся
+  MAX_PUBLIC_ROUTES: 3,               // публичных трасс на одного игрока (свои локальные трассы без ограничений)
+  OSRM_ROUTE_URL: 'https://router.project-osrm.org/route/v1/driving/',
+  BUILD_RADIUS_M: 80,                 // на сколько метров от точки искать дорогу
+  BUILD_MAX_LINE_POINTS: 2500,        // сколько точек хранить в линии трассы
+
   // --- Сервер Supabase (общие рекорды, см. api.js) ---
   SUPABASE_URL: 'https://qywpwtwerjuxjgeslysd.supabase.co',
-  SUPABASE_KEY: '',    // сюда вставьте publishable (anon) ключ из Supabase -> Project Settings -> API Keys
+  SUPABASE_KEY: 'sb_publishable_5vlGlUCE3tas5oTE7JnvIQ_jn03zIlc',   // publishable-ключ: публичный, его можно хранить в коде
 
   // --- Данные (см. api.js) ---
   ROUTES_URL: 'data/routes.json',        // официальные трассы

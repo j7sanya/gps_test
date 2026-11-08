@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=16 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=19 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=19">
 </head>
 
 <body>
@@ -45,6 +45,32 @@
     <button id="btn" class="fab" aria-label="Начать запись" title="Начать запись"></button>
     <button id="saveBtn">💾 Сохранить как трассу</button>
     <div id="status">Определяю ваше местоположение… Разрешите доступ к геолокации.</div>
+  </div>
+
+  <!-- Конструктор трассы: заменяет нижнюю панель, пока вы ставите точки -->
+  <div id="buildPanel">
+    <div class="b-top"><b id="buildLen">0.00 км</b><span id="buildHint"></span></div>
+    <button id="bRetry" class="b-small">↻ Повторить</button>
+    <button id="bAdd">📍 Поставить старт</button>
+    <div class="b-row">
+      <button class="b-small" id="bUndo">↶ Отменить</button>
+      <button class="b-small" id="bClear">Очистить</button>
+      <label class="b-loop"><input type="checkbox" id="bLoopBox"> Кольцо</label>
+    </div>
+    <div class="b-row">
+      <button class="cancel" id="bCancel">Выйти</button>
+      <button id="bCreate" disabled>Создать трассу</button>
+    </div>
+  </div>
+</div>
+
+<!-- Выбор: как создать трассу -->
+<div id="createSheet">
+  <div class="sheet">
+    <h3>Новая трасса</h3>
+    <button id="shDraw">✏️ Нарисовать на карте<small>Ставите точки, маршрут строится по дорогам</small></button>
+    <button id="shRecord" class="alt">🔴 Записать заездом<small>Включается GPS, вы проезжаете трассу сами</small></button>
+    <button class="cancel" id="shCancel">Отмена</button>
   </div>
 </div>
 
@@ -94,6 +120,10 @@
     <h3>Новая трасса</h3>
     <p id="saveInfo"></p>
     <input id="routeName" type="text" maxlength="40" placeholder="Название трассы">
+    <label class="share-row" id="saveShareRow">
+      <input type="checkbox" id="savePublic">
+      <span><b>🌍 Видят все</b><small id="saveShareNote"></small></span>
+    </label>
     <div class="row">
       <button class="cancel" id="saveCancel">Отмена</button>
       <button id="saveOk">Сохранить</button>
@@ -102,18 +132,19 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=16"></script>   <!-- настройки -->
-<script src="js/utils.js?v=16"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=16"></script>      <!-- карта -->
-<script src="js/ui.js?v=16"></script>       <!-- нижняя панель -->
-<script src="js/api.js?v=16"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=16"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=16"></script>     <!-- привязка к дорогам -->
-<script src="js/routes.js?v=16"></script>   <!-- окно «Трассы» -->
-<script src="js/confetti.js?v=16"></script> <!-- конфетти при рекорде -->
-<script src="js/records.js?v=16"></script>  <!-- окно «Рекорды» -->
-<script src="js/profile.js?v=16"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=16"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=16"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=19"></script>   <!-- настройки -->
+<script src="js/utils.js?v=19"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=19"></script>      <!-- карта -->
+<script src="js/ui.js?v=19"></script>       <!-- нижняя панель -->
+<script src="js/api.js?v=19"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=19"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=19"></script>     <!-- привязка к дорогам -->
+<script src="js/routes.js?v=19"></script>   <!-- окно «Трассы» -->
+<script src="js/builder.js?v=19"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=19"></script> <!-- конфетти при рекорде -->
+<script src="js/records.js?v=19"></script>  <!-- окно «Рекорды» -->
+<script src="js/profile.js?v=19"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=19"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=19"></script>      <!-- запуск и кнопки -->
 </body>
 </html>
