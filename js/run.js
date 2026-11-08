@@ -307,7 +307,7 @@ STR.run = (function () {
       updateRun(A, p, false);
       if (run) {   // заезд мог закончиться или прерваться
         STR.ui.render(run.stats);
-        U.setStatus(`Заезд идёт · точность GPS ±${Math.round(p.acc)} м`);
+        U.setStatus(`Заезд идёт · точность GPS ±${Math.round(p.acc)} м`, true);
       }
       return;
     }

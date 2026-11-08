@@ -44,7 +44,7 @@ STR.gps = (function () {
     // Пока запись не идёт, просто показываем, где мы находимся
     if (!rec) {
       const inRun = STR.run && (STR.run.isActive() || STR.run.isDone());   // во время заезда и на экране результата статус не затираем
-      if (!s.stopT && !inRun) U.setStatus(`Ваше местоположение определено (±${Math.round(p.acc)} м).\nНажмите «Начать запись».`);
+      if (!s.stopT && !inRun) U.setStatus(`Ваше местоположение определено (±${Math.round(p.acc)} м).\nНажмите «Начать запись».`, true);
       return;
     }
 
@@ -104,7 +104,7 @@ STR.gps = (function () {
     STR.map.follow(p);
     STR.ui.render(s);
     U.setStatus(`Точек: ${s.points} · точность ±${Math.round(p.acc)} м · отброшено: ${s.rejected}\n` +
-                `Сворачивали приложение: ${s.hiddenCount} раз · разрывов: ${s.breaks}`);
+                `Сворачивали приложение: ${s.hiddenCount} раз · разрывов: ${s.breaks}`, true);
   }
 
   function onError(err) {

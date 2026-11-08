@@ -10,18 +10,15 @@ STR.ui = (function () {
       const end = s.stopT || Date.now();
       const elapsed = end - s.startT;
       const avg = elapsed > 0 ? s.distance / (elapsed / 1000) : 0;
-      $('sTime').textContent = U.fmtTime(elapsed);
-      $('sDist').textContent = (s.distance / 1000).toFixed(2);
       $('sSpeed').textContent = Math.round(U.kmh(s.speedNow));
-      $('sAvg').textContent = Math.round(U.kmh(avg));
       $('sMax').textContent = Math.round(U.kmh(s.maxSpeed));
-      $('sGap').textContent = Math.round(s.maxGap);
+      $('sAvg').textContent = Math.round(U.kmh(avg));
+      $('sDist').textContent = (s.distance / 1000).toFixed(2);
     },
 
     // Обнулить цифры
     clearStats() {
-      ['sTime', 'sDist', 'sSpeed', 'sAvg', 'sMax', 'sGap'].forEach(id => { $(id).textContent = '0'; });
-      $('sTime').textContent = '00:00';
+      ['sSpeed', 'sMax', 'sAvg'].forEach(id => { $(id).textContent = '0'; });
       $('sDist').textContent = '0.00';
     },
 

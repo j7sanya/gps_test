@@ -61,7 +61,11 @@ html, body {
   display: block; margin-top: 2px; font-size: 10px; letter-spacing: .06em;
   text-transform: uppercase; color: var(--hint);
 }
-.stat:nth-child(3) b { color: var(--accent); }   /* текущая скорость — акцентом */
+
+/* Текущая скорость — крупная цифра над плитками */
+.hero { display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 0 0 8px; }
+.hero b { font-family: var(--mono); font-size: 60px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
+.hero span { color: var(--hint); font-size: 14px; }
 
 /* ---------- Кнопки ---------- */
 button {
@@ -88,22 +92,18 @@ button.stop {
   display: none; margin-top: 8px; background: var(--ok); color: #04130a;
   box-shadow: 0 6px 20px rgba(34,211,107,.25);
 }
-#status {
-  font-size: 12px; color: var(--hint); margin-top: 8px; min-height: 16px;
-  white-space: pre-line; line-height: 1.35;
-}
+#status { display: none; }   /* текст остаётся для отладки, на экране его заменяет #toast */
 
-/* Кнопки поверх карты */
-#routesBtn, #locate, #recordsBtn, #profileBtn {
-  position: absolute; right: 12px; z-index: 1000; width: auto;
-  background: rgba(17,20,26,.88); color: var(--text);
-  border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.5);
+/* Кнопки поверх карты: меню и «где я» */
+#menuBtn, #locate {
+  position: absolute; right: 12px; z-index: 1000; width: 46px; height: 46px; padding: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; color: var(--text);
+  background: rgba(17,20,26,.9); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.5);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
-#routesBtn { top: 12px; padding: 10px 16px; font-size: 14px; border-radius: 22px; letter-spacing: .03em; }
-#recordsBtn, #profileBtn { top: 62px; width: 44px; height: 44px; padding: 0; font-size: 20px; border-radius: 50%; }
-#profileBtn { top: 112px; }
-#locate { top: 162px; width: 44px; height: 44px; padding: 0; font-size: 20px; border-radius: 50%; }
+#menuBtn { top: 12px; }
+#locate { top: 66px; }
+#menuBtn svg, #locate svg { width: 22px; height: 22px; display: block; }
 
 /* ---------- Окно «Трассы» ---------- */
 #routesOverlay, #recordsOverlay, #profileOverlay {
@@ -167,7 +167,7 @@ button.stop {
 
 /* ---------- Секундомер заезда ---------- */
 #runBanner {
-  display: none; position: absolute; top: 12px; left: 12px; right: 128px; z-index: 1000;
+  display: none; position: absolute; top: 12px; left: 12px; right: 72px; z-index: 1000;
   background: rgba(11,13,16,.92); color: var(--text);
   border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 16px;
   padding: 10px 14px; box-shadow: 0 6px 24px rgba(0,0,0,.6);
@@ -289,7 +289,7 @@ button.stop {
 /* ---------- Конструктор трассы ---------- */
 #buildPanel { display: none; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line); }
 body.building #buildPanel { display: block; }
-body.building #panel, body.building #routesBtn, body.building #recordsBtn, body.building #profileBtn, body.building #runBanner { display: none !important; }
+body.building #panel, body.building #menuBtn, body.building #drawer, body.building #runBanner { display: none !important; }
 body.building #locate { top: 12px; }
 #buildPanel .b-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
 #buildLen { font-family: var(--mono); font-size: 24px; white-space: nowrap; }
@@ -321,3 +321,47 @@ body.building #locate { top: 12px; }
 /* Ник-ссылка в «Рекордах»: нажатие открывает профиль игрока */
 .link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
 .link:active { opacity: .6; }
+
+/* ---------- Всплывающие сообщения ---------- */
+#toast {
+  position: fixed; left: 14px; right: 86px; bottom: 200px; transform: translateY(16px); z-index: 4800;
+  padding: 11px 14px; border-radius: 14px;
+  background: rgba(22,26,33,.96); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  color: var(--text); font-size: 13px; line-height: 1.4; white-space: pre-line; text-align: left;
+  box-shadow: 0 10px 30px rgba(0,0,0,.6); opacity: 0; pointer-events: none; transition: transform .25s, opacity .25s;
+}
+#toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
+/* ---------- Боковое меню (шторка справа налево) ---------- */
+#drawer { position: fixed; inset: 0; z-index: 3800; visibility: hidden; }
+#drawer.open { visibility: visible; }
+#drawerDim { position: absolute; inset: 0; background: rgba(0,0,0,.55); opacity: 0; transition: opacity .25s; }
+#drawer.open #drawerDim { opacity: 1; }
+#drawerPanel {
+  position: absolute; top: 0; bottom: 0; right: 0; width: min(72%, 340px);
+  background: #12161d; border-left: 1px solid var(--line); box-shadow: -12px 0 30px rgba(0,0,0,.5);
+  padding: calc(18px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 8px;
+  transform: translateX(100%); transition: transform .26s cubic-bezier(.2,.8,.2,1);
+}
+#drawer.open #drawerPanel { transform: translateX(0); }
+.dr-prof { display: flex; align-items: center; gap: 12px; padding: 4px 4px 16px; margin-bottom: 6px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.dr-ava {
+  width: 54px; height: 54px; border-radius: 50%; flex: none; overflow: hidden; border: 3px solid var(--accent);
+  background: var(--card-hi); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800;
+}
+.dr-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dr-who { min-width: 0; }
+.dr-who b { display: block; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dr-who small { color: var(--hint); font-size: 12px; }
+.dr-item {
+  display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 13px 12px; cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+.dr-item:active { background: var(--card-hi); }
+.dr-item i { font-style: normal; font-size: 22px; width: 28px; text-align: center; }
+.dr-item div { flex: 1; min-width: 0; }
+.dr-item b { display: block; font-size: 15px; }
+.dr-item small { color: var(--hint); font-size: 12px; }
+.dr-item em { font-style: normal; color: var(--hint); font-size: 20px; }
+.dr-ver { margin-top: auto; color: #4a5260; font-size: 11px; text-align: center; }

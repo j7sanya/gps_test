@@ -42,6 +42,9 @@ STR.u = (function () {
     return out;
   }
 
+  // нажатие на сообщение закрывает его
+  document.addEventListener('DOMContentLoaded', () => { const t = $('toast'); if (t) t.addEventListener('click', () => t.classList.remove('show')); });
+
   return {
     $,
     haversine,
@@ -51,6 +54,16 @@ STR.u = (function () {
     kmh: ms => ms * 3.6,
     fmtKm: m => (m / 1000).toFixed(2) + ' км',
     fmtDate: ts => new Date(ts).toLocaleDateString('ru-RU'),
-    setStatus: text => { $('status').textContent = text; }
+    // Сообщение пользователю: всплывает сверху и сама исчезает.
+    // quiet=true — для частых служебных обновлений (GPS-точки): не показываем, только запоминаем.
+    setStatus: (text, quiet) => {
+      $('status').textContent = text;
+      if (quiet) return;
+      const t = $('toast');
+      t.textContent = text;
+      t.classList.add('show');
+      clearTimeout(STR.u._toastTimer);
+      STR.u._toastTimer = setTimeout(() => t.classList.remove('show'), Math.min(9000, 3000 + text.length * 40));
+    }
   };
 })();

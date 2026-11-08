@@ -12,17 +12,16 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=20 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=22 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=20">
+<link rel="stylesheet" href="css/style.css?v=22">
 </head>
 
 <body>
+<div id="toast"></div>
 <div id="app">
-  <button id="routesBtn">🏁 Трассы</button>
-  <button id="recordsBtn" title="Рекорды">🏆</button>
-  <button id="profileBtn" title="Профиль">👤</button>
-  <button id="locate" title="Моё местоположение">📍</button>
+  <button id="menuBtn" aria-label="Меню" title="Меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <button id="locate" aria-label="Моё местоположение" title="Моё местоположение"><svg viewBox="0 0 24 24" fill="none" stroke="#19c8ff" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
   <div id="map"></div>
 
   <!-- Секундомер заезда: появляется, когда вы пересекаете линию старта трассы -->
@@ -34,17 +33,16 @@
   </div>
 
   <div id="panel">
+    <!-- Вариант A: текущая скорость крупно, под ней три плитки (макс., средняя, пройдено) -->
+    <div class="hero"><b id="sSpeed">0</b><span>км/ч</span></div>
     <div class="stats">
-      <div class="stat"><b id="sTime">00:00</b><span>время</span></div>
+      <div class="stat"><b id="sMax">0</b><span>макс. км/ч</span></div>
+      <div class="stat"><b id="sAvg">0</b><span>средняя км/ч</span></div>
       <div class="stat"><b id="sDist">0.00</b><span>км</span></div>
-      <div class="stat"><b id="sSpeed">0</b><span>км/ч сейчас</span></div>
-      <div class="stat"><b id="sAvg">0</b><span>км/ч средняя</span></div>
-      <div class="stat"><b id="sMax">0</b><span>км/ч макс.</span></div>
-      <div class="stat"><b id="sGap">0</b><span>макс. пауза, с</span></div>
     </div>
     <button id="btn" class="fab" aria-label="Начать запись" title="Начать запись"></button>
     <button id="saveBtn">💾 Сохранить как трассу</button>
-    <div id="status">Определяю ваше местоположение… Разрешите доступ к геолокации.</div>
+    <div id="status"></div>   <!-- скрыт: сообщения теперь показываются всплывающей подсказкой (#toast) -->
   </div>
 
   <!-- Конструктор трассы: заменяет нижнюю панель, пока вы ставите точки -->
@@ -81,6 +79,21 @@
     <button class="ov-close" id="routesClose">✕</button>
   </div>
   <div id="routesList"></div>
+</div>
+
+<!-- Боковое меню (шторка справа налево): профиль, трассы, рекорды -->
+<div id="drawer">
+  <div id="drawerDim"></div>
+  <aside id="drawerPanel">
+    <div class="dr-prof" id="drProf">
+      <div class="dr-ava" id="drAva"></div>
+      <div class="dr-who"><b id="drNick">Профиль</b><small id="drId"></small></div>
+    </div>
+    <div class="dr-item" data-go="routes"><i>🏁</i><div><b>Трассы</b><small>Список и создание</small></div><em>›</em></div>
+    <div class="dr-item" data-go="records"><i>🏆</i><div><b>Рекорды</b><small>Таблицы и ваше место</small></div><em>›</em></div>
+    <div class="dr-item" data-go="profile"><i>👤</i><div><b>Профиль</b><small>Статистика и статус</small></div><em>›</em></div>
+    <div class="dr-ver" id="drVer"></div>
+  </aside>
 </div>
 
 <!-- Экран «сначала задайте ник» (если ника нет, он задаётся в боте) -->
@@ -132,19 +145,20 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=20"></script>   <!-- настройки -->
-<script src="js/utils.js?v=20"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=20"></script>      <!-- карта -->
-<script src="js/ui.js?v=20"></script>       <!-- нижняя панель -->
-<script src="js/api.js?v=20"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=20"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=20"></script>     <!-- привязка к дорогам -->
-<script src="js/routes.js?v=20"></script>   <!-- окно «Трассы» -->
-<script src="js/builder.js?v=20"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=20"></script> <!-- конфетти при рекорде -->
-<script src="js/records.js?v=20"></script>  <!-- окно «Рекорды» -->
-<script src="js/profile.js?v=20"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=20"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=20"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=22"></script>   <!-- настройки -->
+<script src="js/utils.js?v=22"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=22"></script>      <!-- карта -->
+<script src="js/ui.js?v=22"></script>       <!-- нижняя панель -->
+<script src="js/api.js?v=22"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=22"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=22"></script>     <!-- привязка к дорогам -->
+<script src="js/routes.js?v=22"></script>   <!-- окно «Трассы» -->
+<script src="js/menu.js?v=22"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=22"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=22"></script> <!-- конфетти при рекорде -->
+<script src="js/records.js?v=22"></script>  <!-- окно «Рекорды» -->
+<script src="js/profile.js?v=22"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=22"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=22"></script>      <!-- запуск и кнопки -->
 </body>
 </html>
