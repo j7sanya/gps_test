@@ -10,7 +10,7 @@ STR.ui = (function () {
       const end = s.stopT || Date.now();
       const elapsed = end - s.startT;
       const avg = elapsed > 0 ? s.distance / (elapsed / 1000) : 0;
-      $('sSpeed').textContent = Math.round(U.kmh(s.speedNow));
+      STR.speedo.set(Math.round(U.kmh(s.speedNow)));
       $('sMax').textContent = Math.round(U.kmh(s.maxSpeed));
       $('sAvg').textContent = Math.round(U.kmh(avg));
       $('sDist').textContent = (s.distance / 1000).toFixed(2);
@@ -18,7 +18,8 @@ STR.ui = (function () {
 
     // Обнулить цифры
     clearStats() {
-      ['sSpeed', 'sMax', 'sAvg'].forEach(id => { $(id).textContent = '0'; });
+      STR.speedo.set(0);
+      ['sMax', 'sAvg'].forEach(id => { $(id).textContent = '0'; });
       $('sDist').textContent = '0.00';
     },
 
@@ -34,6 +35,7 @@ STR.ui = (function () {
       b.innerHTML = icons[kind];
       b.title = titles[kind]; b.setAttribute('aria-label', titles[kind]);
       b.classList.toggle('stop', kind !== 'start');
+      STR.speedo.setMode(kind === 'stop' ? 'ЗАПИСЬ' : kind === 'cancel' ? 'ЗАЕЗД' : '');
     },
     setRecording(on) { this.setFab(on ? 'stop' : 'start'); },
     setRunning(on) { this.setFab(on ? 'cancel' : 'start'); },

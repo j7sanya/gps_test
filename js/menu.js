@@ -42,6 +42,7 @@ STR.menu = (function () {
     if (where === 'routes') STR.routes.open();
     else if (where === 'records') STR.records.open();
     else if (where === 'profile') STR.profile.open();
+    else if (where === 'speedo') STR.speedo.open();
   }
 
   $('menuBtn').addEventListener('click', open);
