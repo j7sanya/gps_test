@@ -90,14 +90,14 @@ STR.run = (function () {
   }
 
   // Пересёк ли отрезок AB линию ворот g в «нужную» сторону. Возвращает долю пути 0..1 или null.
-  function cross(g, A, B) {
+  function cross(g, A, B, halfWidth) {
     const a = (A[0] - g.c[0]) * g.d[0] + (A[1] - g.c[1]) * g.d[1];
     const b = (B[0] - g.c[0]) * g.d[0] + (B[1] - g.c[1]) * g.d[1];
     if (!(a < 0 && b >= 0)) return null;
     const f = -a / (b - a);
     const X = [A[0] + f * (B[0] - A[0]), A[1] + f * (B[1] - A[1])];
     const lateral = (X[0] - g.c[0]) * g.n[0] + (X[1] - g.c[1]) * g.n[1];
-    return Math.abs(lateral) <= C.GATE_HALF_WIDTH_M ? f : null;
+    return Math.abs(lateral) <= (halfWidth || C.GATE_HALF_WIDTH_M) ? f : null;
   }
 
   // ---------- Интерфейс (баннер с секундомером) ----------
@@ -160,14 +160,32 @@ STR.run = (function () {
 
     const { minDist, hits } = pr.scan(P, C.RUN_MAX_DEV_M);
 
+    // Финиш проверяем раньше всего остального: при редких GPS-точках первая точка после финиша
+    // может оказаться дальше 50 м от конца трассы, и это не должно считаться съездом.
+    // Финиш: пересекли линию финиша, пройдя почти всю трассу.
+    // Если между двумя точками был обрыв GPS, линия финиша могла оказаться внутри него:
+    // тогда финиш всё равно засчитываем (время приблизительное, рекорд не засчитывается).
+    let need = (run.invalid ? C.RUN_FINISH_MIN_PROGRESS_BAD : C.RUN_FINISH_MIN_PROGRESS) * pr.total;
+    if (A && run.progress + U.haversine(A, B) >= need) {
+      const fr = cross(pr.finish, pr.toXY(A), P, afterGap ? 1e9 : 0);
+      if (fr !== null && (!afterGap || Math.hypot(P[0] - pr.finish.c[0], P[1] - pr.finish.c[1]) <= 1500)) {
+        finish(A.t + fr * (B.t - A.t)); return;
+      }
+    }
+
+    // После потери сигнала (свернули приложение, погас экран) мы могли проехать много:
+    // ищем себя на трассе впереди без ограничения окна (рекорд при этом уже не засчитывается)
+    if (afterGap) run.uncertain = true;
+
     // 1) Едем по трассе: ищем себя рядом с уже пройденным (так не путаются участки, где дорога повторяется)
     if (!run.lost) {
+      const ahead = run.uncertain ? Infinity : C.RUN_WINDOW_AHEAD_M;
       let pick = null;
       for (const h of hits) {
-        if (h.s >= run.progress - C.RUN_WINDOW_BACK_M && h.s <= run.progress + C.RUN_WINDOW_AHEAD_M &&
-            (!pick || h.dist < pick.dist)) pick = h;
+        if (h.s >= run.progress - C.RUN_WINDOW_BACK_M && h.s <= run.progress + ahead &&
+            (!pick || (run.uncertain ? h.s < pick.s : h.dist < pick.dist))) pick = h;
       }
-      if (pick) run.progress = Math.max(run.progress, pick.s);
+      if (pick) { run.progress = Math.max(run.progress, pick.s); run.uncertain = false; }
       else { run.lost = true; markInvalid('отклонение от трассы больше ' + C.RUN_MAX_DEV_M + ' м'); }
     }
 
@@ -176,9 +194,10 @@ STR.run = (function () {
       if (A && !afterGap) run.progress = Math.min(pr.total, run.progress + U.haversine(A, B));
       let pick = null;
       for (const h of hits) {
-        if (Math.abs(h.s - run.progress) <= C.RUN_RECOVER_TOL_M && (!pick || h.dist < pick.dist)) pick = h;
+        const ok = run.uncertain ? h.s >= run.progress - C.RUN_WINDOW_BACK_M : Math.abs(h.s - run.progress) <= C.RUN_RECOVER_TOL_M;
+        if (ok && (!pick || (run.uncertain ? h.s < pick.s : h.dist < pick.dist))) pick = h;
       }
-      if (pick) { run.progress = pick.s; run.lost = false; }
+      if (pick) { run.progress = pick.s; run.lost = false; run.uncertain = false; }
     }
 
     // Слишком далеко и слишком долго — считаем, что вы уехали с трассы
@@ -190,11 +209,15 @@ STR.run = (function () {
     }
     if ((B.t - run.t0) / 1000 > C.RUN_MAX_DURATION_S) { abort('Заезд прерван: прошло слишком много времени.'); return; }
 
-    // Финиш: пересекли линию финиша, пройдя почти всю трассу
-    const need = (run.invalid ? C.RUN_FINISH_MIN_PROGRESS_BAD : C.RUN_FINISH_MIN_PROGRESS) * pr.total;
-    if (A && !afterGap && run.progress >= need) {
-      const fr = cross(pr.finish, pr.toXY(A), P);
-      if (fr !== null) { finish(A.t + fr * (B.t - A.t)); return; }
+    // Повторная проверка: прогресс мог дорасти до нужного только что.
+    // Если между двумя точками был обрыв GPS, линия финиша могла оказаться внутри него:
+    // тогда финиш всё равно засчитываем (время приблизительное, рекорд не засчитывается).
+    need = (run.invalid ? C.RUN_FINISH_MIN_PROGRESS_BAD : C.RUN_FINISH_MIN_PROGRESS) * pr.total;
+    if (A && run.progress >= need) {
+      const fr = cross(pr.finish, pr.toXY(A), P, afterGap ? 1e9 : 0);
+      if (fr !== null && (!afterGap || Math.hypot(P[0] - pr.finish.c[0], P[1] - pr.finish.c[1]) <= 1500)) {
+        finish(A.t + fr * (B.t - A.t)); return;
+      }
     }
 
     STR.map.follow(B);
@@ -276,11 +299,12 @@ STR.run = (function () {
 
     // Длинная пауза: отрезок через пустоту не используем
     if (dt > C.GAP_BREAK_S) {
+      const prev = filter.last;
       filter.last = p; filter.speed = null;
       if (run) {
         run.stats.maxGap = Math.max(run.stats.maxGap, dt);
         run.stats.speedNow = 0;
-        updateRun(null, p, true);
+        updateRun(prev, p, true);
         if (run) STR.ui.render(run.stats);
       }
       return;
