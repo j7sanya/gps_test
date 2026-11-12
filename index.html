@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=26 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=27 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=26">
+<link rel="stylesheet" href="css/style.css?v=27">
 </head>
 
 <body>
@@ -82,6 +82,36 @@
   <div id="routesList"></div>
 </div>
 
+<!-- История заездов (последние 20 + закреплённые) -->
+<div id="historyOverlay">
+  <div class="ov-head"><h2>🕘 История заездов</h2><button class="ov-close" id="historyClose">✕</button></div>
+  <div id="hiTop">
+    <div id="hiChips"><span class="chip on" data-f="all">Все</span><span class="chip" data-f="pin">⭐ Закреплённые</span><span class="chip" data-f="rec">🏆 Рекорды</span></div>
+    <select id="hiRoute"><option value="">Все трассы</option></select>
+    <div id="hiNote"></div>
+  </div>
+  <div id="hiList"></div>
+</div>
+
+<!-- Окно заезда: тепловая карта скорости -->
+<div id="runOverlay">
+  <div class="ov-head"><h2 id="rvTitle">Заезд</h2><div class="rv-act"><button class="hi-star" id="rvStar" aria-label="Закрепить">☆</button><button class="ov-close" id="runClose">✕</button></div></div>
+  <div id="rvBody">
+    <div id="rvMapBox">
+      <div id="runMap"></div>
+      <div id="rvNoMap">🗺️<br>Для этого заезда трек не сохранён.<br>Новые заезды будут с картой скорости.</div>
+      <div class="rv-leg"><div class="rv-bar"></div><div class="rv-lb"><span>0</span><span id="rvLegMax">км/ч</span></div></div>
+    </div>
+    <div class="rv-big"><div><small id="rvWhen"></small><div id="rvTime">00:00.00</div></div><div id="rvTag"></div></div>
+    <div class="rv-tiles">
+      <div class="rv-tile"><b id="rvMax">—</b><span>макс. км/ч</span></div>
+      <div class="rv-tile"><b id="rvAvg">—</b><span>средняя км/ч</span></div>
+      <div class="rv-tile"><b id="rvDist">—</b><span>км</span></div>
+    </div>
+    <div class="rv-hint">Цвет линии — скорость: синий медленно, красный быстро. ⚡ — место максимальной скорости.</div>
+  </div>
+</div>
+
 <!-- Настройки (главная): спидометр и светофор -->
 <div id="settingsOverlay">
   <div class="ov-head"><h2>⚙️ Настройки</h2><button class="ov-close" id="settingsClose">✕</button></div>
@@ -145,6 +175,7 @@
     <div class="dr-item" data-go="routes"><i>🏁</i><div><b>Трассы</b><small>Список и создание</small></div><em>›</em></div>
     <div class="dr-item" data-go="near"><i>📍</i><div><b>Трассы рядом</b><small>Старт с места</small></div><em>›</em></div>
     <div class="dr-item" data-go="records"><i>🏆</i><div><b>Рекорды</b><small>Таблицы и ваше место</small></div><em>›</em></div>
+    <div class="dr-item" data-go="history"><i>🕘</i><div><b>История заездов</b><small>Карта скорости заездов</small></div><em>›</em></div>
     <div class="dr-item" data-go="settings"><i>⚙️</i><div><b>Настройки</b><small>Спидометр, светофор</small></div><em>›</em></div>
     <div class="dr-ver" id="drVer"></div>
   </aside>
@@ -199,23 +230,24 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=26"></script>   <!-- настройки -->
-<script src="js/utils.js?v=26"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=26"></script>      <!-- карта -->
-<script src="js/ui.js?v=26"></script>
-<script src="js/speedo.js?v=26"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=26"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=26"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=26"></script>     <!-- привязка к дорогам -->
-<script src="js/routes.js?v=26"></script>   <!-- окно «Трассы» -->
-<script src="js/launch.js?v=26"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=26"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/menu.js?v=26"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=26"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=26"></script> <!-- конфетти при рекорде -->
-<script src="js/records.js?v=26"></script>  <!-- окно «Рекорды» -->
-<script src="js/profile.js?v=26"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=26"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=26"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=27"></script>   <!-- настройки -->
+<script src="js/utils.js?v=27"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=27"></script>      <!-- карта -->
+<script src="js/ui.js?v=27"></script>
+<script src="js/speedo.js?v=27"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=27"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=27"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=27"></script>     <!-- привязка к дорогам -->
+<script src="js/routes.js?v=27"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=27"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=27"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=27"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/menu.js?v=27"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=27"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=27"></script> <!-- конфетти при рекорде -->
+<script src="js/records.js?v=27"></script>  <!-- окно «Рекорды» -->
+<script src="js/profile.js?v=27"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=27"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=27"></script>      <!-- запуск и кнопки -->
 </body>
 </html>

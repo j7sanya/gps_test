@@ -213,6 +213,15 @@ STR.api = (function () {
       writeJSON(C.STORE_RUNS, list.slice(-500));
     },
     getRuns() { return readJSON(C.STORE_RUNS, []); },
+    // Изменить поля заезда (например, поставить звёздочку): id — идентификатор заезда
+    updateRun(id, patch) {
+      const list = readJSON(C.STORE_RUNS, []);
+      const r = list.find(x => (x.id || String(x.date)) === id);
+      if (!r) return false;
+      Object.assign(r, patch);
+      writeJSON(C.STORE_RUNS, list);
+      return true;
+    },
     // Личная статистика по истории заездов
     getStats() {
       const runs = readJSON(C.STORE_RUNS, []);

@@ -25,6 +25,14 @@ STR.run = (function () {
   let pending = null;                   // пересечена линия старта, ждём подтверждения (см. RUN_START_CONFIRM_M)
   let lastPanelT = 0;                   // когда в последний раз обновляли нижнюю панель
 
+  // Трек заезда для истории: точка примерно раз в секунду (время от старта, координаты, скорость км/ч)
+  function trackPush(p, force) {
+    if (!run || !run.track) return;
+    const t = Math.max(0, p.t - run.t0), last = run.track[run.track.length - 1];
+    if (!force && last && t - last.t < 900) return;
+    run.track.push({ t, lat: p.lat, lon: p.lon, v: run.stats.speedNow * 3.6 });
+  }
+
   // ---------- Геометрия ----------
   const unit = (dx, dy) => { const l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
 
@@ -135,7 +143,7 @@ STR.run = (function () {
     const g = pr.start, Q = pr.toXY(B);
     const along = Math.max(0, (Q[0] - g.c[0]) * g.d[0] + (Q[1] - g.c[1]) * g.d[1]);   // сколько уже отъехали от линии старта
     run = {
-      pr, t0, progress: 0, lost: false, invalid: false, reason: '', farSince: null,
+      pr, t0, progress: 0, lost: false, invalid: false, reason: '', farSince: null, track: [],
       stats: { startT: t0, stopT: null, distance: along, speedNow: filter.speed || 0, maxSpeed: 0, maxGap: 0, points: 0 }
     };
     mode = 'running';
@@ -145,6 +153,7 @@ STR.run = (function () {
     STR.map.showRoute(pr.lines, false);          // трасса сразу появляется на карте
     if (STR.gps.holdScreen) STR.gps.holdScreen();  // экран не гаснет
     U.setStatus(`Заезд «${pr.name}» начался!`);
+    trackPush(B, true);
     updateRun(null, B, false);
     if (run) STR.ui.render(run.stats);
     tick();
@@ -169,7 +178,7 @@ STR.run = (function () {
     if (A && run.progress + U.haversine(A, B) >= need) {
       const fr = cross(pr.finish, pr.toXY(A), P, afterGap ? 1e9 : 0);
       if (fr !== null && (!afterGap || Math.hypot(P[0] - pr.finish.c[0], P[1] - pr.finish.c[1]) <= 1500)) {
-        finish(A.t + fr * (B.t - A.t)); return;
+        finish(A.t + fr * (B.t - A.t), { lat: A.lat + fr * (B.lat - A.lat), lon: A.lon + fr * (B.lon - A.lon) }); return;
       }
     }
 
@@ -216,7 +225,7 @@ STR.run = (function () {
     if (A && run.progress >= need) {
       const fr = cross(pr.finish, pr.toXY(A), P, afterGap ? 1e9 : 0);
       if (fr !== null && (!afterGap || Math.hypot(P[0] - pr.finish.c[0], P[1] - pr.finish.c[1]) <= 1500)) {
-        finish(A.t + fr * (B.t - A.t)); return;
+        finish(A.t + fr * (B.t - A.t), { lat: A.lat + fr * (B.lat - A.lat), lon: A.lon + fr * (B.lon - A.lon) }); return;
       }
     }
 
@@ -224,8 +233,9 @@ STR.run = (function () {
     updateInfo();
   }
 
-  function finish(t1) {
+  function finish(t1, pos) {
     const pr = run.pr;
+    if (pos) { run.stats.speedNow = run.stats.speedNow || 0; trackPush({ t: t1, lat: pos.lat, lon: pos.lon }, true); }
     const time = (t1 - run.t0) / 1000;                 // секунды, с долями
     const avg = pr.distance / time * 3.6;
     const prev = STR.api.getRecord(pr.id);
@@ -244,10 +254,12 @@ STR.run = (function () {
     }
 
     // История заездов (нужна для профиля)
-    STR.api.addRun({
-      routeId: pr.id, routeName: pr.name, time, avgKmh: avg, maxKmh: Math.max(avg, run.stats.maxSpeed * 3.6),
-      dist: pr.distance, date: Date.now(), valid: !run.invalid, record: isRecord
-    });
+    const meta = {
+      id: 'r' + Date.now().toString(36), routeId: pr.id, routeName: pr.name, time, avgKmh: avg, maxKmh: Math.max(avg, run.stats.maxSpeed * 3.6),
+      dist: pr.distance, date: Date.now(), valid: !run.invalid, record: isRecord, star: false
+    };
+    STR.api.addRun(meta);
+    if (STR.history) STR.history.save(meta, run.track);   // трек для карты скорости (js/history.js)
 
     // Нижняя панель показывает итоги заезда: время до сотых берётся из t1, длина — длина трассы
     run.stats.stopT = t1;
@@ -328,6 +340,7 @@ STR.run = (function () {
       st.points++;
       if (st.points >= C.MIN_POINTS_FOR_MAX) st.maxSpeed = Math.max(st.maxSpeed, st.speedNow);
 
+      trackPush(p);
       updateRun(A, p, false);
       if (run) {   // заезд мог закончиться или прерваться
         STR.ui.render(run.stats);

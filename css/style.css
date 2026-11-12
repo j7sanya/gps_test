@@ -106,11 +106,11 @@ button.stop {
 #menuBtn svg, #locate svg { width: 22px; height: 22px; display: block; }
 
 /* ---------- Окно «Трассы» ---------- */
-#routesOverlay, #recordsOverlay, #profileOverlay, #speedoOverlay, #settingsOverlay, #lightsOverlay, #nearOverlay {
+#routesOverlay, #recordsOverlay, #profileOverlay, #speedoOverlay, #settingsOverlay, #lightsOverlay, #nearOverlay, #historyOverlay, #runOverlay {
   display: none; position: fixed; inset: 0; z-index: 3000;
   flex-direction: column; background: var(--bg); color: var(--text);
 }
-#routesOverlay.open, #recordsOverlay.open, #profileOverlay.open, #speedoOverlay.open, #settingsOverlay.open, #lightsOverlay.open, #nearOverlay.open { display: flex; }
+#routesOverlay.open, #recordsOverlay.open, #profileOverlay.open, #speedoOverlay.open, #settingsOverlay.open, #lightsOverlay.open, #nearOverlay.open, #historyOverlay.open, #runOverlay.open { display: flex; }
 #profileOverlay { z-index: 3500; }   /* профиль открывается и поверх окна «Рекорды» */
 .ov-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -493,3 +493,47 @@ body.building #locate { top: 12px; }
 .nc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .nc-d { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--hint); white-space: nowrap; }
 .nc-d.close { color: var(--ok); }
+
+/* ---------- История заездов ---------- */
+#hiTop { padding: 10px 14px 4px; display: flex; flex-direction: column; gap: 8px; }
+#hiChips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font-size: 12px; padding: 6px 11px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); color: var(--hint); cursor: pointer; user-select: none; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+#hiRoute { width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; -webkit-appearance: none; appearance: none; }
+#hiNote { font-size: 11px; color: var(--hint); line-height: 1.4; }
+#hiList { flex: 1; overflow-y: auto; padding: 6px 12px calc(16px + env(safe-area-inset-bottom)); }
+.hi-run { display: flex; gap: 10px; align-items: stretch; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 9px; cursor: pointer; position: relative; }
+.hi-th { width: 84px; height: 68px; border-radius: 10px; background: #0d1014; flex: none; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.hi-th svg { width: 100%; height: 100%; display: block; }
+.hi-nothumb { font-size: 22px; opacity: .5; }
+.hi-m { flex: 1; min-width: 0; padding-right: 30px; }
+.hi-n { display: flex; justify-content: space-between; gap: 6px; font-size: 13px; font-weight: 700; }
+.hi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hi-when { font-style: normal; font: 600 11px var(--mono); color: var(--hint); white-space: nowrap; }
+.hi-tm { font: 800 21px/1.2 var(--mono); }
+.hi-s { font-size: 10.5px; color: var(--hint); }
+.tag { display: inline-block; font: 700 10px sans-serif; border-radius: 6px; padding: 2px 6px; margin-left: 6px; vertical-align: middle; }
+.t-rec { background: #2a2410; color: var(--warn); } .t-bad { background: #2c1519; color: var(--accent); }
+.hi-star { position: absolute; right: 6px; bottom: 6px; width: 34px; height: 34px; padding: 0; border-radius: 10px; background: transparent; border: 0; box-shadow: none; font-size: 19px; color: var(--hint); display: flex; align-items: center; justify-content: center; }
+.hi-star.on { color: #ffc21a; }
+.rv-act { display: flex; align-items: center; gap: 8px; }
+.rv-act .hi-star { position: static; width: 38px; height: 38px; background: var(--card-hi); border: 1px solid var(--line); }
+#rvBody { flex: 1; overflow-y: auto; }
+#rvMapBox { position: relative; height: 320px; background: #0d1014; border-bottom: 1px solid var(--line); }
+#runMap { position: absolute; inset: 0; }
+#rvMapBox.nomap { height: 170px; }
+#rvMapBox.nomap #runMap, #rvMapBox.nomap .rv-leg { display: none; }
+#rvNoMap { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; text-align: center; color: var(--hint); font-size: 12.5px; line-height: 1.6; padding: 20px; }
+#rvMapBox.nomap #rvNoMap { display: flex; }
+.rv-leg { position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 500; background: rgba(17,20,26,.92); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.rv-bar { height: 7px; border-radius: 5px; background: linear-gradient(90deg, rgb(43,108,255), rgb(25,200,255), rgb(34,211,107), rgb(255,210,26), rgb(255,122,26), rgb(255,45,61)); }
+.rv-lb { display: flex; justify-content: space-between; font: 600 10px sans-serif; color: var(--hint); margin-top: 3px; }
+.rv-pin { transform: translate(-50%, -140%); white-space: nowrap; background: #fff; color: #000; border-radius: 8px; padding: 2px 7px; font: 700 11px sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.rv-big { display: flex; justify-content: space-between; align-items: flex-end; padding: 12px 16px 4px; }
+.rv-big small { display: block; color: var(--hint); font-size: 12px; margin-bottom: 3px; }
+#rvTime { font: 800 36px/1 var(--mono); }
+.rv-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 14px; }
+.rv-tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; text-align: center; padding: 9px 0; }
+.rv-tile b { display: block; font: 700 18px var(--mono); }
+.rv-tile span { font-size: 9px; letter-spacing: .06em; color: var(--hint); text-transform: uppercase; }
+.rv-hint { color: var(--hint); font-size: 11.5px; padding: 4px 16px calc(18px + env(safe-area-inset-bottom)); line-height: 1.5; }
