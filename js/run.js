@@ -337,7 +337,7 @@ STR.run = (function () {
     }
 
     // Ищем старт: не во время записи нового маршрута и не сразу после финиша
-    if (STR.gps.isRecording() || p.t < cooldownUntil) { pending = null; return; }
+    if (STR.gps.isRecording() || p.t < cooldownUntil || (STR.launch && STR.launch.busy())) { pending = null; return; }
 
     // Линию старта уже пересекли: ждём, пока вы отъедете за неё (защита от «дрожания» GPS на месте)
     if (pending) {
@@ -368,5 +368,20 @@ STR.run = (function () {
   // Кнопка в баннере: «Отменить заезд» / «Закрыть»
   $('runBtn').addEventListener('click', cancel);
 
-  return { refresh, onFix, cancel, isActive: () => mode === 'running', isDone: () => mode === 'done' };
+  // ---------- Старт с места (см. launch.js) ----------
+  // Заезд начинается по сигналу светофора: t0 — момент «зелёного». Возвращает true, если заезд запущен.
+  function startStanding(routeId, t0) {
+    const pr = prepared.find(x => x.id === String(routeId));
+    const B = STR.gps.lastPos();
+    if (!pr || !B) return false;
+    if (mode !== 'idle') cancel();            // закрываем окно прошлого результата
+    pending = null;
+    startRun(pr, t0, B);
+    return mode === 'running';
+  }
+
+  // Трассы для поиска «рядом» и подсказки: id, название, длина, координаты старта
+  const getPrepared = () => prepared;
+
+  return { refresh, onFix, cancel, startStanding, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
 })();

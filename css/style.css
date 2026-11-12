@@ -106,11 +106,11 @@ button.stop {
 #menuBtn svg, #locate svg { width: 22px; height: 22px; display: block; }
 
 /* ---------- Окно «Трассы» ---------- */
-#routesOverlay, #recordsOverlay, #profileOverlay, #speedoOverlay {
+#routesOverlay, #recordsOverlay, #profileOverlay, #speedoOverlay, #settingsOverlay, #lightsOverlay, #nearOverlay {
   display: none; position: fixed; inset: 0; z-index: 3000;
   flex-direction: column; background: var(--bg); color: var(--text);
 }
-#routesOverlay.open, #recordsOverlay.open, #profileOverlay.open, #speedoOverlay.open { display: flex; }
+#routesOverlay.open, #recordsOverlay.open, #profileOverlay.open, #speedoOverlay.open, #settingsOverlay.open, #lightsOverlay.open, #nearOverlay.open { display: flex; }
 #profileOverlay { z-index: 3500; }   /* профиль открывается и поверх окна «Рекорды» */
 .ov-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -418,3 +418,78 @@ body.building #locate { top: 12px; }
 .sp-cap { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
 .sp-cap span { color: var(--sp); font-weight: 700; font-size: 12px; }
 .sp-prev { pointer-events: none; }
+
+/* ---------- Старт с места ---------- */
+#launchCard {
+  display: none; position: absolute; left: 10px; right: 78px; bottom: calc(100% + 10px); z-index: 1100;
+  background: rgba(26,30,38,.97); border: 1px solid var(--line); border-radius: 16px; padding: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.55);
+}
+#launchCard.open { display: block; }
+#launchCard b { font-size: 14px; display: block; }
+#launchCard small { display: block; color: var(--hint); font-size: 11.5px; margin-top: 2px; line-height: 1.35; }
+#launchCard button { padding: 10px; font-size: 14px; border-radius: 12px; box-shadow: none; margin-top: 10px; }
+#launchCard button.alt { background: var(--card-hi); border: 1px solid var(--line); color: var(--text); }
+#launchCard button:disabled { opacity: .4; }
+#launchCard .lc-two { display: flex; gap: 8px; }
+#launchCard .lc-two button { flex: 1; padding: 10px 4px; }
+#launchCard .lc-small { padding: 8px; font-size: 13px; margin-top: 6px; }
+.lc-more { color: #7fb2ff; font-size: 12px; margin-top: 6px; cursor: pointer; }
+.lc-chk { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 3px 0; }
+.lc-chk:first-of-type { margin-top: 6px; }
+.lc-chk i { width: 18px; height: 18px; flex: none; border-radius: 50%; background: var(--ok); color: #06210f; font-style: normal; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+.lc-chk i.no { background: #3a2226; color: var(--accent); }
+/* затемнение с отсчётом */
+#launchOverlay { display: none; position: fixed; inset: 0; z-index: 4900; background: rgba(0,0,0,.78); flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; text-align: center; }
+#launchOverlay.open { display: flex; }
+#launchOverlay.go { background: rgba(34,211,107,.18); }
+#launchOverlay.bad { background: rgba(120,10,20,.82); }
+.lo-top { font-size: 12px; letter-spacing: .22em; text-transform: uppercase; color: var(--hint); }
+#launchOverlay.go .lo-top, #launchOverlay.bad .lo-top { visibility: hidden; }
+#launchOverlay.go #loBtns { display: none; }
+#loBody { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.lo-cap { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--hint); min-height: 16px; }
+.lo-go { font-size: 46px; font-weight: 900; font-style: italic; color: var(--ok); text-shadow: 0 0 28px rgba(34,211,107,.7); }
+.lo-bad { font-size: 38px; font-weight: 900; color: var(--accent); text-transform: uppercase; }
+.lo-sub { color: #cfd5df; font-size: 14px; line-height: 1.4; }
+#loBtns { display: flex; flex-direction: column; gap: 10px; width: min(240px, 100%); }
+#loBtns button { padding: 12px; font-size: 15px; box-shadow: none; }
+#loBtns button.alt { background: var(--card-hi); border: 1px solid var(--line); color: var(--text); }
+.lamp { width: 46px; height: 46px; border-radius: 50%; background: #1c2028; border: 2px solid #2a303b; transition: background .08s, box-shadow .08s; }
+.lamp.r { background: #ff2d3d; box-shadow: 0 0 22px #ff2d3d; border-color: #ff7a84; }
+.lamp.y { background: #ffb400; box-shadow: 0 0 22px #ffb400; border-color: #ffd36a; }
+.lamp.o { background: #ffb400; box-shadow: 0 0 16px #ffb400; border-color: #ffd36a; }
+.lamp.g { background: #22d36b; box-shadow: 0 0 26px #22d36b; border-color: #8af0b3; }
+.tl, .tree { background: #0a0c0f; border: 2px solid #2a303b; border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.tree .lamp { width: 40px; height: 40px; }
+.f1 { display: flex; gap: 8px; background: #0a0c0f; border: 2px solid #2a303b; border-radius: 16px; padding: 12px; }
+.f1 .col { display: flex; flex-direction: column; gap: 6px; }
+.f1 .lamp { width: 36px; height: 36px; }
+.ring { width: 190px; height: 190px; border-radius: 50%; border: 8px solid var(--sp, var(--accent)); box-shadow: 0 0 30px var(--sp-glow, rgba(255,45,61,.5)); display: flex; align-items: center; justify-content: center; }
+.ring b { font-size: 110px; font-weight: 900; line-height: 1; }
+/* превью в настройках: уменьшаем */
+.launch-prev { display: flex; flex-direction: column; align-items: center; }
+.lg-prev { display: flex; justify-content: center; padding: 4px 0; }
+.lg-prev > * { zoom: .6; }
+.lg-prev .lo-cap { display: none; }
+.lg-hint { color: var(--hint); font-size: 12px; text-align: center; margin-top: 6px; }
+.lg-card .lg-prev .tl, .lg-card .lg-prev .tree { margin-top: 0; }
+.lg-demo { margin-bottom: 16px; }
+#settingsBody, #lightsBody, #nearBody { flex: 1; overflow-y: auto; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+#lightsBody { display: block; }
+.tgl-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; position: relative; }
+.tgl-row b { display: block; font-size: 15px; }
+.tgl-row small { color: var(--hint); font-size: 12px; }
+.tgl-row input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.tgl-row i { width: 46px; height: 28px; flex: none; border-radius: 28px; background: #2a303b; position: relative; transition: background .15s; }
+.tgl-row i::after { content: ''; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tgl-row input:checked + i { background: var(--ok); }
+.tgl-row input:checked + i::after { transform: translateX(18px); }
+/* трассы рядом */
+#nearSearch { width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 15px; outline: none; -webkit-appearance: none; }
+#nearHint { color: var(--hint); font-size: 12px; min-height: 0; }
+#nearHint:empty { display: none; }
+.near-card { cursor: pointer; margin-bottom: 0; }
+.nc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.nc-d { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--hint); white-space: nowrap; }
+.nc-d.close { color: var(--ok); }

@@ -202,6 +202,7 @@ STR.speedo = (function () {
   function close() {
     $('speedoOverlay').classList.remove('open');
     try { STR.tg.BackButton.offClick(close); STR.tg.BackButton.hide(); } catch (e) {}
+    if (STR.settings) STR.settings.resume();   // вернулись в «Настройки»
   }
   $('speedoClose').addEventListener('click', close);
 

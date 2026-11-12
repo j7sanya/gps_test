@@ -40,6 +40,7 @@ STR.gps = (function () {
     lastPos = p;
     STR.map.showMe(p);
     if (STR.run) STR.run.onFix(p);   // заезды по трассам (см. run.js)
+    if (STR.launch) STR.launch.onFix(p);   // подсказка «рядом старт» и старт с места (см. launch.js)
 
     // Пока запись не идёт, просто показываем, где мы находимся
     if (!rec) {
