@@ -32,11 +32,29 @@ STR.gps = (function () {
   }
   reset();
 
+  // ---------- Скорость вне записи и заезда (просто едем) ----------
+  let idleV = 0;
+  function idleSpeed(p, prev) {
+    let v = null;
+    if (p.speed != null && p.speed >= 0) v = p.speed;
+    else if (prev && p.t > prev.t) {
+      const dt = (p.t - prev.t) / 1000;
+      if (dt > 0 && dt < 10) v = U.haversine(prev, p) / dt;
+    }
+    if (v === null) return;
+    if (v > C.MAX_SPEED_MS) return;               // GPS-скачок
+    if (v < C.STANDING_SPEED_MS) v = 0;
+    idleV = idleV * 0.5 + v * 0.5;
+    if (idleV < 0.3) idleV = 0;
+    STR.speedo.set(Math.round(U.kmh(idleV)));
+  }
+
   // ---------- Пришла новая точка от GPS ----------
   function onPosition(pos) {
     const c = pos.coords;
     const p = { lat: c.latitude, lon: c.longitude, t: pos.timestamp, acc: c.accuracy, speed: c.speed };
 
+    const prevPos = lastPos;
     lastPos = p;
     STR.map.showMe(p);
     if (STR.run) STR.run.onFix(p);   // заезды по трассам (см. run.js)
@@ -45,6 +63,7 @@ STR.gps = (function () {
     // Пока запись не идёт, просто показываем, где мы находимся
     if (!rec) {
       const inRun = STR.run && (STR.run.isActive() || STR.run.isDone());   // во время заезда и на экране результата статус не затираем
+      if (!s.stopT && !inRun) idleSpeed(p, prevPos);   // обычное движение: спидометр живёт и без записи/заезда
       if (!s.stopT && !inRun) U.setStatus(`Ваше местоположение определено (±${Math.round(p.acc)} м).\nНажмите «Начать запись».`, true);
       return;
     }
