@@ -142,11 +142,27 @@ STR.gps = (function () {
   }
 
   // Не даём экрану погаснуть во время записи
+  const KEY_SCREEN = 'strace_screen_v1';
+  let screenMode = 'app';   // 'app' — пока приложение открыто, 'run' — только во время заезда и записи
+  try { const m = localStorage.getItem(KEY_SCREEN); if (m === 'app' || m === 'run') screenMode = m; } catch (e) {}
+  let hudOn = false;        // включена проекция: экран всегда держим включённым
+  const wantAwake = () => screenMode === 'app' || hudOn || rec || !!(STR.run && STR.run.isActive());
   async function keepScreenOn() {
     try {
-      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+      if (!('wakeLock' in navigator)) return;
+      if (wakeLock && !wakeLock.released) return;     // уже держим
+      wakeLock = await navigator.wakeLock.request('screen');
     } catch (e) {}
   }
+  function releaseIfIdle() {
+    if (!wantAwake() && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
+  function setScreenMode(m) {
+    screenMode = m === 'run' ? 'run' : 'app';
+    try { localStorage.setItem(KEY_SCREEN, screenMode); } catch (e) {}
+    if (wantAwake()) keepScreenOn(); else releaseIfIdle();
+  }
+  function setHud(on) { hudOn = !!on; if (hudOn) keepScreenOn(); else releaseIfIdle(); }
 
   // Слежение за положением (работает и без записи, чтобы показывать вас на карте)
   async function startWatching() {
@@ -177,7 +193,7 @@ STR.gps = (function () {
     rec = false;
     s.stopT = Date.now();
     clearInterval(timerId);   // слежение за положением не выключаем: вы остаётесь на карте
-    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+    releaseIfIdle();
     STR.ui.render(s);
     return {
       segs: s.segs,
@@ -192,16 +208,13 @@ STR.gps = (function () {
 
   // Считаем сворачивания (чтобы понять, как Telegram ведёт себя в фоне)
   document.addEventListener('visibilitychange', () => {
-    const running = STR.run && STR.run.isActive();
-    if (!rec && !running) return;
-    if (document.hidden) { if (rec) s.hiddenCount++; }
-    else keepScreenOn();   // экран снова включили — повторно запрашиваем блокировку
+    if (document.hidden) { if (rec) s.hiddenCount++; return; }
+    if (wantAwake()) keepScreenOn();   // экран снова включили — повторно запрашиваем блокировку
   });
 
   // Для заездов: не давать экрану погаснуть / отпустить
-  function releaseScreen() {
-    if (!rec && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
-  }
+  function releaseScreen() { releaseIfIdle(); }
+  if (screenMode === 'app') keepScreenOn();   // по умолчанию экран не гаснет, пока приложение открыто
 
   return {
     start,
@@ -209,6 +222,9 @@ STR.gps = (function () {
     startWatching,
     holdScreen: keepScreenOn,
     releaseScreen,
+    setScreenMode,
+    getScreenMode: () => screenMode,
+    setHud,
     isRecording: () => rec,
     lastPos: () => lastPos
   };

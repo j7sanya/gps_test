@@ -23,6 +23,7 @@ STR.run = (function () {
   let cooldownUntil = 0;                // до какого момента (время GPS, мс) не стартуем новый заезд
   const filter = { last: null, speed: null };   // собственный фильтр GPS-точек для заездов
   let pending = null;                   // пересечена линия старта, ждём подтверждения (см. RUN_START_CONFIRM_M)
+  let lastDone = null;                  // итог последнего заезда (для проекции)
   let lastPanelT = 0;                   // когда в последний раз обновляли нижнюю панель
 
   // Трек заезда для истории: точка примерно раз в секунду (время от старта, координаты, скорость км/ч)
@@ -148,6 +149,7 @@ STR.run = (function () {
     };
     mode = 'running';
     STR.ui.setRunning(true);                     // кнопка внизу справа становится «отменить заезд»
+    if (STR.hud) STR.hud.auto();                 // проекция включается сама (если так настроено)
     showBanner(pr.name);
     $('runTime').textContent = '00:00.00';
     STR.map.showRoute(pr.lines, false);          // трасса сразу появляется на карте
@@ -266,6 +268,7 @@ STR.run = (function () {
     run.stats.distance = pr.distance;
     STR.ui.render(run.stats);
 
+    lastDone = { time, name: pr.name, bad, isRecord, prev: prev ? prev.time : null };
     stopTick();
     run = null;
     mode = 'done';
@@ -396,5 +399,12 @@ STR.run = (function () {
   // Трассы для поиска «рядом» и подсказки: id, название, длина, координаты старта
   const getPrepared = () => prepared;
 
-  return { refresh, onFix, cancel, startStanding, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
+  // Живые данные заезда для режима проекции
+  function getLive() {
+    if (run) return { mode: 'running', t: Date.now() - run.t0, progress: run.progress / run.pr.total, name: run.pr.name, rec: STR.api.getRecord(run.pr.id), invalid: run.invalid };
+    if (mode === 'done' && lastDone) return Object.assign({ mode: 'done' }, lastDone);
+    return { mode: 'idle' };
+  }
+
+  return { getLive, refresh, onFix, cancel, startStanding, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
 })();

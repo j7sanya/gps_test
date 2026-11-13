@@ -223,6 +223,7 @@ STR.launch = (function () {
     clearInterval(prepTimer); prepTimer = null;
     hideCard();
     state = 'countdown';
+    if (STR.hud) STR.hud.auto();                       // проекция включается сама (если так настроено)
     $('loBtns').innerHTML = '<button class="alt" data-act="abort">Отмена</button>';
     seq = runSeq(cfg.style, (late, goAt) => {
       seq = null;

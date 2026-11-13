@@ -17,6 +17,8 @@ STR.settings = (function () {
 
   $('settingsClose').addEventListener('click', back);
   $('setSpeedo').addEventListener('click', () => openChild(STR.speedo.open));
+  $('setHud').addEventListener('click', () => openChild(STR.hud.openSettings));
+  $('setScreen').addEventListener('click', () => openChild(STR.hud.openScreen));
   $('setLights').addEventListener('click', () => openChild(openLights));
 
   // ---------- Светофор: стиль отсчёта и переключатели ----------

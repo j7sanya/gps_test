@@ -209,5 +209,5 @@ STR.speedo = (function () {
   applyColor(cfg.color);
   mount();
 
-  return { set, setMode, open, close, isOpen, get: () => Object.assign({}, cfg) };
+  return { set, setMode, open, close, isOpen, get: () => Object.assign({}, cfg), value: () => last };
 })();
