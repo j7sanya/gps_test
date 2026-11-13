@@ -69,9 +69,9 @@
   $('saveBtn').addEventListener('click', () => lastRecording && STR.routes.openSaveDialog(lastRecording));
   $('saveCancel').addEventListener('click', STR.routes.closeSaveDialog);
   $('saveOk').addEventListener('click', STR.routes.save);
-  $('recordsClose').addEventListener('click', STR.records.back);
   $('profileClose').addEventListener('click', STR.profile.close);
   $('routesClose').addEventListener('click', STR.routes.close);
+  $('routesNew').addEventListener('click', () => { STR.routes.close(); sheet.classList.add('open'); });   // «+» в списке трасс: нарисовать или записать
   $('locate').addEventListener('click', () => {
     const p = STR.gps.lastPos();
     if (p) STR.map.goTo(p); else STR.gps.startWatching();
@@ -84,6 +84,7 @@
 
   // Запуск: грузим официальные трассы и сразу определяем местоположение
   STR.api.init().then(() => STR.run.refresh());
+  STR.api.loadBoard();   // общие рекорды (нужны и для проверки, умеет ли сервер делить «С хода / С места»)
   STR.api.loadPublicRoutes().then(ok => { if (ok) STR.run.refresh(); });   // публичные трассы других игроков
   STR.gps.startWatching();
 })();

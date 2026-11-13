@@ -22,6 +22,7 @@ STR.run = (function () {
   let rafId = null;                     // анимация секундомера
   let cooldownUntil = 0;                // до какого момента (время GPS, мс) не стартуем новый заезд
   const filter = { last: null, speed: null };   // собственный фильтр GPS-точек для заездов
+  let armedId = null;                   // трасса, выбранная для заезда «с хода»: только она стартует при проезде линии
   let pending = null;                   // пересечена линия старта, ждём подтверждения (см. RUN_START_CONFIRM_M)
   let lastDone = null;                  // итог последнего заезда (для проекции)
   let lastPanelT = 0;                   // когда в последний раз обновляли нижнюю панель
@@ -139,15 +140,16 @@ STR.run = (function () {
   }
 
   // ---------- Ход заезда ----------
-  function startRun(pr, t0, B) {
+  function startRun(pr, t0, B, sm) {   // sm: 'roll' — с хода, 'stand' — с места (это решает, в какую таблицу рекордов попадёт заезд)
     // stats — цифры для нижней панели (те же, что при записи маршрута)
     const g = pr.start, Q = pr.toXY(B);
     const along = Math.max(0, (Q[0] - g.c[0]) * g.d[0] + (Q[1] - g.c[1]) * g.d[1]);   // сколько уже отъехали от линии старта
     run = {
-      pr, t0, progress: 0, lost: false, invalid: false, reason: '', farSince: null, track: [],
+      pr, t0, sm: sm === 'stand' ? 'stand' : 'roll', progress: 0, lost: false, invalid: false, reason: '', farSince: null, track: [],
       stats: { startT: t0, stopT: null, distance: along, speedNow: filter.speed || 0, maxSpeed: 0, maxGap: 0, points: 0 }
     };
     mode = 'running';
+    armedId = null;                              // выбор «с хода» использован
     STR.ui.setRunning(true);                     // кнопка внизу справа становится «отменить заезд»
     if (STR.hud) STR.hud.auto();                 // проекция включается сама (если так настроено)
     showBanner(pr.name);
@@ -240,7 +242,9 @@ STR.run = (function () {
     if (pos) { run.stats.speedNow = run.stats.speedNow || 0; trackPush({ t: t1, lat: pos.lat, lon: pos.lon }, true); }
     const time = (t1 - run.t0) / 1000;                 // секунды, с долями
     const avg = pr.distance / time * 3.6;
-    const prev = STR.api.getRecord(pr.id);
+    const sm = run.sm;                                 // вид старта: 'roll' | 'stand'
+    const smText = sm === 'stand' ? 'с места' : 'с хода';
+    const prev = STR.api.getRecord(pr.id, sm);
 
     let info;
     let bad = false;
@@ -248,17 +252,17 @@ STR.run = (function () {
     if (run.invalid) {
       bad = true;
       info = `Рекорд не засчитан: ${run.reason}.`;
-    } else if (STR.api.submitRecord(pr.id, { time, avgKmh: avg, date: Date.now() })) {
+    } else if (STR.api.submitRecord(pr.id, { time, avgKmh: avg, date: Date.now() }, sm)) {
       isRecord = true;
-      info = prev ? `🏆 Новый рекорд! Лучше на ${(prev.time - time).toFixed(2)} с` : '🏆 Первый рекорд на этой трассе!';
+      info = prev ? `🏆 Новый рекорд (${smText})! Лучше на ${(prev.time - time).toFixed(2)} с` : `🏆 Первый рекорд ${smText} на этой трассе!`;
     } else {
-      info = `Рекорд: ${U.fmtPrecise(prev.time)} (вы медленнее на ${(time - prev.time).toFixed(2)} с)`;
+      info = `Рекорд ${smText}: ${U.fmtPrecise(prev.time)} (вы медленнее на ${(time - prev.time).toFixed(2)} с)`;
     }
 
     // История заездов (нужна для профиля)
     const meta = {
       id: 'r' + Date.now().toString(36), routeId: pr.id, routeName: pr.name, time, avgKmh: avg, maxKmh: Math.max(avg, run.stats.maxSpeed * 3.6),
-      dist: pr.distance, date: Date.now(), valid: !run.invalid, record: isRecord, star: false
+      dist: pr.distance, date: Date.now(), valid: !run.invalid, record: isRecord, star: false, start: sm
     };
     STR.api.addRun(meta);
     if (STR.history) STR.history.save(meta, run.track);   // трек для карты скорости (js/history.js)
@@ -268,7 +272,7 @@ STR.run = (function () {
     run.stats.distance = pr.distance;
     STR.ui.render(run.stats);
 
-    lastDone = { time, name: pr.name, bad, isRecord, prev: prev ? prev.time : null };
+    lastDone = { time, name: pr.name, bad, isRecord, sm, prev: prev ? prev.time : null };
     stopTick();
     run = null;
     mode = 'done';
@@ -281,7 +285,7 @@ STR.run = (function () {
     $('runBtn').textContent = 'Закрыть';
     if (STR.gps.releaseScreen) STR.gps.releaseScreen();
     U.setStatus(`Финиш! Время: ${U.fmtPrecise(time)}`);
-    if (isRecord) STR.api.sendRecord(pr.id, { time, avgKmh: avg });   // общий рекорд на сервер (если подключён)
+    if (isRecord) STR.api.sendRecord(pr.id, { time, avgKmh: avg }, sm);   // общий рекорд на сервер (если подключён)
     if (isRecord && STR.confetti) STR.confetti.fire();   // новый рекорд — конфетти
   }
 
@@ -362,7 +366,7 @@ STR.run = (function () {
       if (along >= C.RUN_START_CONFIRM_M) {
         const { pr, t0 } = pending;
         pending = null;
-        startRun(pr, t0, p);          // секундомер отсчитывается от момента пересечения линии
+        startRun(pr, t0, p, 'roll');  // секундомер отсчитывается от момента пересечения линии
         return;
       }
       if (along > -10 && p.t <= pending.until) return;   // ещё ждём
@@ -370,6 +374,7 @@ STR.run = (function () {
     }
 
     for (const pr of prepared) {
+      if (pr.id !== armedId) continue;   // трасса не выбрана — проезд через старт заезд не запускает
       const fr = cross(pr.start, pr.toXY(A), pr.toXY(p));
       if (fr !== null) { pending = { pr, t0: A.t + fr * (p.t - A.t), until: p.t + C.RUN_START_CONFIRM_S * 1000 }; return; }
     }
@@ -392,19 +397,23 @@ STR.run = (function () {
     if (!pr || !B) return false;
     if (mode !== 'idle') cancel();            // закрываем окно прошлого результата
     pending = null;
-    startRun(pr, t0, B);
+    startRun(pr, t0, B, 'stand');
     return mode === 'running';
   }
 
   // Трассы для поиска «рядом» и подсказки: id, название, длина, координаты старта
   const getPrepared = () => prepared;
 
+  // «С хода»: выбрать трассу, старт которой запустит секундомер при проезде линии
+  function arm(id) { armedId = id == null ? null : String(id); pending = null; }
+  const armed = () => armedId;
+
   // Живые данные заезда для режима проекции
   function getLive() {
-    if (run) return { mode: 'running', t: Date.now() - run.t0, progress: run.progress / run.pr.total, name: run.pr.name, rec: STR.api.getRecord(run.pr.id), invalid: run.invalid };
+    if (run) return { mode: 'running', t: Date.now() - run.t0, progress: run.progress / run.pr.total, name: run.pr.name, rec: STR.api.getRecord(run.pr.id, run.sm), invalid: run.invalid };
     if (mode === 'done' && lastDone) return Object.assign({ mode: 'done' }, lastDone);
     return { mode: 'idle' };
   }
 
-  return { getLive, refresh, onFix, cancel, startStanding, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
+  return { getLive, refresh, onFix, cancel, startStanding, arm, armed, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
 })();

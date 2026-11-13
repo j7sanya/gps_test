@@ -12,7 +12,7 @@ STR.profile = (function () {
 
   // BackButton: если профиль открыт поверх окна «Рекорды», «Назад» закрывает только профиль
   function hookBack() {
-    try { STR.tg.BackButton.offClick(STR.records.back); } catch (e) {}
+    try { STR.tg.BackButton.offClick(STR.track.back); } catch (e) {}
     try { STR.tg.BackButton.show(); STR.tg.BackButton.onClick(close); } catch (e) {}
   }
 
@@ -45,7 +45,7 @@ STR.profile = (function () {
     viewing = null;
     try { STR.tg.BackButton.offClick(close); } catch (e) {}
     // вернулись в «Рекорды»: «Назад» снова управляет им
-    if (STR.records && STR.records.isOpen()) { try { STR.tg.BackButton.onClick(STR.records.back); } catch (e) {} }
+    if (STR.track && STR.track.isOpen()) { try { STR.tg.BackButton.onClick(STR.track.back); } catch (e) {} }
     else { try { STR.tg.BackButton.hide(); } catch (e) {} }
   }
 
@@ -155,7 +155,7 @@ STR.profile = (function () {
     if (!results.length) card.appendChild(el('pf-id', v.loaded ? 'Пока нет рекордов.' : 'Загружаю…'));
     results.forEach(r => {
       const row = el('pf-row');
-      row.appendChild(el('', r.routeName, 'span'));
+      row.appendChild(el('', r.routeName + (r.mode === 'stand' ? ' · 🚦 с места' : ' · 🏁 с хода'), 'span'));
       const b = el('', U.fmtPrecise(r.time), 'b');
       b.appendChild(el('', `  #${r.rank} из ${r.total}`, 'small'));
       row.appendChild(b);

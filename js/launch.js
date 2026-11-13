@@ -78,7 +78,8 @@ STR.launch = (function () {
   let state = 'idle';            // idle | prepare | countdown | false | demo
   let route = null;              // выбранная трасса (подготовленная в run.js)
   let prev = null, last = null, speedKmh = null;   // последние GPS-точки и скорость
-  let dwellSince = null, suggestId = null;
+  let dwellSince = null, suggestId = null, rollId = null;
+  const lastD = {};              // прошлые расстояния до стартов (чтобы понять, приближаетесь вы или нет)
   const dismissed = {};          // трассы, для которых нажали «Не сейчас»
   let recent = [];               // последние точки (чтобы найти место старта без «дрожания»)
   let P0 = null;                 // где стояли в момент «Я готов»
@@ -126,14 +127,35 @@ STR.launch = (function () {
   const card = () => $('launchCard');
   function showCard(html) { card().innerHTML = html; card().classList.add('open'); }
   function hideCard() { card().classList.remove('open'); card().innerHTML = ''; suggestId = null; }
-  const recText = pr => { const r = STR.api.getRecord(pr.id); return r ? 'ваш рекорд ' + U.fmtPrecise(r.time) : 'вы тут ещё не ездили'; };
+  const recText = pr => {
+    const a = STR.api.getRecord(pr.id, 'roll'), b = STR.api.getRecord(pr.id, 'stand'), p = [];
+    if (a) p.push('с хода ' + U.fmtPrecise(a.time));
+    if (b) p.push('с места ' + U.fmtPrecise(b.time));
+    return p.length ? 'ваш рекорд ' + p.join(' · ') : 'вы тут ещё не ездили';
+  };
 
   function showSuggest(list) {
     const x = list[0]; suggestId = x.pr.id;
     const more = list.length > 1 ? `<div class="lc-more" data-act="more">ещё ${list.length - 1} рядом ›</div>` : '';
-    showCard(`<b>🏁 ${esc(x.pr.name)} — старт рядом</b>
-      <small>${fmtDist(x.d)} от линии · ${(x.pr.distance / 1000).toFixed(1)} км · ${recText(x.pr)}</small>${more}
-      <div class="lc-two"><button data-act="start">Старт с места</button><button class="alt" data-act="later">Не сейчас</button></div>`);
+    showCard(`<b>🏁 ${esc(x.pr.name)}</b>
+      <small>Старт через <span id="lcDist">${fmtDist(x.d)}</span> · ${(x.pr.distance / 1000).toFixed(1)} км · ${recText(x.pr)}</small>${more}
+      <div class="lc-two"><button data-act="roll">С хода</button><button data-act="start">С места</button></div>
+      <button class="alt lc-small" data-act="later">Не сейчас</button>`);
+  }
+
+  // «С хода» выбрано: ждём проезда линии старта
+  function showRolling(pr) {
+    rollId = pr.id; suggestId = null;
+    showCard(`<b>🏁 ${esc(pr.name)} — заезд с хода</b>
+      <small>Проезжайте линию старта: время пойдёт с неё.</small>
+      <button class="alt lc-small" data-act="unroll">Отмена</button>`);
+  }
+  function stopRolling(clear) {
+    if (rollId === null) return;
+    rollId = null;
+    if (STR.run.armed()) STR.run.arm(null);
+    hideCard();
+    if (clear && STR.run && !STR.run.isActive()) STR.map.clearRoute();
   }
 
   function renderPrepare() {
@@ -279,23 +301,44 @@ STR.launch = (function () {
     }
     if (state !== 'idle') return;
 
-    // Подсказка «рядом старт»
+    // «С хода» выбрано: следим, чтобы не висело вечно
+    if (rollId !== null) {
+      const pr = STR.run.getPrepared().find(x => x.id === rollId);
+      if (STR.run.isActive() || !pr) { rollId = null; hideCard(); }
+      else if (distToStart(pr, p) > 250) stopRolling(true);
+      return;
+    }
+
+    // Окно «С хода / С места» за ~100 м до старта
     const prepared = STR.run.getPrepared();
     for (const id in dismissed) {                       // после «Не сейчас» молчим, пока не отъедете от старта
       const pr = prepared.find(x => x.id === id);
       if (!pr || distToStart(pr, p) > 150) delete dismissed[id];
     }
     const blocked = !cfg.suggest || STR.run.isActive() || STR.run.isDone() || STR.gps.isRecording() || (STR.builder && STR.builder.isActive());
-    const list = blocked ? [] : nearList(p, C.LAUNCH_SUGGEST_M).filter(x => !dismissed[x.pr.id]);
-    const slow = speedKmh !== null && speedKmh < C.LAUNCH_SUGGEST_KMH && p.acc <= 30;
-    if (list.length && slow) {
+    const slow = speedKmh !== null && speedKmh < C.LAUNCH_SUGGEST_KMH;
+    const near = blocked || p.acc > 30 ? [] : nearList(p, C.LAUNCH_SUGGEST_M);
+    const list = near.filter(x => {
+      if (dismissed[x.pr.id]) return false;
+      const prevD = lastD[x.pr.id], coming = prevD !== undefined && x.d < prevD - 0.5;
+      if (STR.run.armed() === x.pr.id && !slow) return false;   // уже выбрана для заезда с хода: просто проезжайте
+      return coming || slow;
+    });
+    const prevDs = Object.assign({}, lastD);
+    prepared.forEach(pr => { lastD[pr.id] = distToStart(pr, p); });
+    if (list.length) {
+      const stillSlow = speedKmh !== null && speedKmh < C.LAUNCH_SUGGEST_KMH;
       if (dwellSince === null) dwellSince = p.t;
-      if (p.t - dwellSince >= 2000 && !(suggestId && card().classList.contains('open') && suggestId === list[0].pr.id)) showSuggest(list);
+      const moving = !stillSlow;                         // едете к старту — показываем сразу, стоите — через 2 с
+      if ((moving || p.t - dwellSince >= 2000) && !(suggestId && card().classList.contains('open') && suggestId === list[0].pr.id)) showSuggest(list);
+      else if (suggestId && $('lcDist')) { const x = list.find(y => y.pr.id === suggestId); if (x) $('lcDist').textContent = fmtDist(x.d); }
     } else {
       dwellSince = null;
-      if (suggestId) {                                  // карточку убираем, когда отъехали или поехали быстро
-        const far = !nearList(p, 100).some(x => x.pr.id === suggestId);
-        if (blocked || far || (speedKmh !== null && speedKmh > 15)) hideCard();
+      if (suggestId) {                                  // карточку убираем, когда отъехали, проехали мимо или она больше не нужна
+        const x = near.find(y => y.pr.id === suggestId);
+        const receding = x && prevDs[suggestId] !== undefined && x.d > prevDs[suggestId] + 1 && !slow;   // проехали мимо и удаляетесь
+        if (receding) dismissed[suggestId] = 1;
+        if (blocked || !x || receding) hideCard();
       }
     }
   }
@@ -306,8 +349,10 @@ STR.launch = (function () {
     if (!b) return;
     const act = b.dataset.act;
     if (act === 'start') choose(suggestId);
+    else if (act === 'roll') { const pr = STR.run.getPrepared().find(x => x.id === suggestId); if (pr) { if (STR.gps.isRecording()) return; STR.run.arm(pr.id); STR.map.showRoute(pr.lines, false); showRolling(pr); } }
+    else if (act === 'unroll') stopRolling(true);
     else if (act === 'later') { if (suggestId) dismissed[suggestId] = 1; hideCard(); }
-    else if (act === 'more') { STR.settings && STR.settings.openNear(); }
+    else if (act === 'more') { STR.routes && STR.routes.open(); }
     else if (act === 'ready') ready();
     else if (act === 'cancel') leave();
     else if (act === 'abort') fail('Отсчёт отменён.');

@@ -40,12 +40,10 @@ STR.menu = (function () {
   function go(where) {
     close();
     if (where === 'routes') STR.routes.open();
-    else if (where === 'records') STR.records.open();
     else if (where === 'profile') STR.profile.open();
     else if (where === 'settings') STR.settings.open();
     else if (where === 'history') STR.history.open();
     else if (where === 'hud') STR.hud.open();
-    else if (where === 'near') STR.settings.openNear();
   }
 
   $('menuBtn').addEventListener('click', open);

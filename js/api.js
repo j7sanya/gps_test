@@ -25,19 +25,32 @@ STR.api = (function () {
   // Работает, только если в config.js указан ключ. Без него приложение просто работает локально.
   const serverOn = () => !!(C.SUPABASE_URL && C.SUPABASE_KEY);
   const hdr = () => ({ apikey: C.SUPABASE_KEY, Authorization: 'Bearer ' + C.SUPABASE_KEY });
-  let board = {};      // лучшие результаты всех игроков: routeId -> [{ name, time, avgKmh, mine }]
+  // Рекорды делятся на два вида старта: 'roll' — «С хода» (время от линии старта), 'stand' — «С места» (время от сигнала светофора).
+  const MODES = ['roll', 'stand'];
+  const modeOf = m => (m === 'stand' ? 'stand' : 'roll');
+  const storeKey = m => (modeOf(m) === 'stand' ? C.STORE_RECORDS_STAND : C.STORE_RECORDS);
+  let serverModes = false;   // на сервере уже есть деление рекордов по виду старта (выполнен migration_mode.sql)
+  let board = { roll: {}, stand: {} };   // лучшие результаты всех игроков: board[вид][routeId] -> [{ name, time, avgKmh, mine }]
 
   // Загрузить таблицу рекордов (читать может любой, подпись не нужна)
   async function loadBoard() {
     if (!serverOn()) return false;
     try {
-      const url = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,created_at,players(nick,num)&order=time_s.asc&limit=1000';
-      const rows = await (await fetch(url, { headers: hdr() })).json();
+      const base = C.SUPABASE_URL + '/rest/v1/records?select=route_id,tg_id,time_s,avg_kmh,created_at,players(nick,num)';
+      const tail = '&order=time_s.asc&limit=1000';
+      let hasMode = true;
+      let rows = await (await fetch(base.replace('route_id,', 'route_id,mode,') + tail, { headers: hdr() })).json();
+      if (!Array.isArray(rows)) {   // на сервере ещё нет колонки mode (не выполнен migration_mode.sql): все рекорды считаем «С хода»
+        hasMode = false;
+        rows = await (await fetch(base + tail, { headers: hdr() })).json();
+      }
       if (!Array.isArray(rows)) return false;
+      serverModes = hasMode;
       const me = STR.tg && STR.tg.initDataUnsafe && STR.tg.initDataUnsafe.user ? STR.tg.initDataUnsafe.user.id : null;
-      board = {};
+      board = { roll: {}, stand: {} };
       rows.forEach(r => {
-        (board[r.route_id] = board[r.route_id] || []).push({
+        const m = hasMode ? modeOf(r.mode) : 'roll';
+        (board[m][r.route_id] = board[m][r.route_id] || []).push({
           name: (r.players && r.players.nick) || 'Игрок', num: r.players ? r.players.num : null, time: Number(r.time_s), avgKmh: Number(r.avg_kmh), date: r.created_at ? Date.parse(r.created_at) : null, mine: me !== null && r.tg_id === me
         });
       });
@@ -137,14 +150,15 @@ STR.api = (function () {
   }
 
   // Отправить свой рекорд на сервер (сервер проверяет подпись Telegram). Свои трассы не отправляем.
-  async function sendRecord(routeId, rec) {
+  async function sendRecord(routeId, rec, mode) {
     const initData = STR.tg && STR.tg.initData;
     if (!serverOn() || !initData || String(routeId).startsWith('local-')) return null;
+    if (modeOf(mode) === 'stand' && !serverModes) return null;   // сервер ещё не умеет хранить «С места»: не смешиваем с «С хода»
     try {
       const resp = await fetch(C.SUPABASE_URL + '/functions/v1/api', {
         method: 'POST',
         headers: { ...hdr(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'record', initData, routeId: String(routeId), time: rec.time, avgKmh: rec.avgKmh })
+        body: JSON.stringify({ action: 'record', initData, routeId: String(routeId), time: rec.time, avgKmh: rec.avgKmh, mode: modeOf(mode) })
       });
       const data = await resp.json();
       if (data && data.ok) loadBoard();
@@ -232,37 +246,43 @@ STR.api = (function () {
       });
       return {
         runs: runs.length,
-        records: Object.keys(readJSON(C.STORE_RECORDS, {})).length,
+        records: Object.keys(readJSON(C.STORE_RECORDS, {})).length + Object.keys(readJSON(C.STORE_RECORDS_STAND, {})).length,
         km: dist / 1000,
         avgKmh: secs > 0 ? (dist / secs) * 3.6 : 0,   // средняя за всё время в пути
         maxKmh, bestAvg
       };
     },
-    // Сколько трасс, где вы на 1-м месте (по общим рекордам)
-    getFirstPlaces() { return Object.keys(board).filter(id => board[id][0] && board[id][0].mine).length; },
+    // Сколько таблиц (трасса + вид старта), где вы на 1-м месте
+    getFirstPlaces() { let n = 0; MODES.forEach(m => Object.keys(board[m]).forEach(id => { if (board[m][id][0] && board[m][id][0].mine) n++; })); return n; },
 
-    // Лучший результат всех игроков на трассе или null
-    getBest(routeId) { const l = board[String(routeId)]; return l && l.length ? l[0] : null; },
-    // Результаты игрока (по номеру профиля) на всех трассах: места, время, средняя скорость
+    // Лучший результат всех игроков на трассе (в таблице нужного вида старта) или null
+    getBest(routeId, mode) { const l = board[modeOf(mode)][String(routeId)]; return l && l.length ? l[0] : null; },
+    // Лучший из двух таблиц: { x, mode } или null
+    getBestAny(routeId) {
+      let out = null;
+      MODES.forEach(m => { const x = this.getBest(routeId, m); if (x && (!out || x.time < out.x.time)) out = { x, mode: m }; });
+      return out;
+    },
+    // Результаты игрока (по номеру профиля) на всех трассах: места, время, средняя скорость, вид старта
     getPlayerResults(num) {
       const out = [];
-      Object.keys(board).forEach(id => {
-        const i = board[id].findIndex(x => x.num === num);
+      MODES.forEach(m => Object.keys(board[m]).forEach(id => {
+        const i = board[m][id].findIndex(x => x.num === num);
         if (i < 0) return;
         const route = (official.concat(pubRoutes)).find(r => String(r.id) === id) || localRoutes().find(r => String(r.id) === id);
         if (!route) return;   // трасса удалена
-        const x = board[id][i];
-        out.push({ routeId: id, routeName: route.name, rank: i + 1, total: board[id].length, time: x.time, avgKmh: x.avgKmh });
-      });
+        const x = board[m][id][i];
+        out.push({ routeId: id, routeName: route.name, mode: m, rank: i + 1, total: board[m][id].length, time: x.time, avgKmh: x.avgKmh });
+      }));
       return out.sort((a, b) => a.rank - b.rank || a.time - b.time);
     },
     // Сколько публичных трасс создал игрок с таким ником
     countRoutesBy(nick) { return pubRoutes.filter(r => r.author === nick).length; },
 
     // Все результаты на трассе, от лучшего к худшему: [{ name, time, avgKmh, date, mine }]
-    getBoard(routeId) { return (board[String(routeId)] || []).slice(); },
+    getBoard(routeId, mode) { return (board[modeOf(mode)][String(routeId)] || []).slice(); },
     // Место игрока на трассе (1, 2…) или null
-    getMyRank(routeId) { const l = board[String(routeId)] || []; const i = l.findIndex(x => x.mine); return i < 0 ? null : i + 1; },
+    getMyRank(routeId, mode) { const l = board[modeOf(mode)][String(routeId)] || []; const i = l.findIndex(x => x.mine); return i < 0 ? null : i + 1; },
 
     // Все трассы: официальные, публичные (от игроков), потом ваши локальные
     getRoutes() { return official.concat(pubRoutes, localRoutes()); },
@@ -285,28 +305,31 @@ STR.api = (function () {
         const r = await callServer({ action: 'delete_route', routeId: id });
         if (!r || !r.ok) return false;
         await loadPublicRoutes();
-        const recs0 = readJSON(C.STORE_RECORDS, {});
-        delete recs0[id];
-        writeJSON(C.STORE_RECORDS, recs0);
+        MODES.forEach(m => { const recs0 = readJSON(storeKey(m), {}); delete recs0[id]; writeJSON(storeKey(m), recs0); });
         return true;
       }
       writeJSON(C.STORE_ROUTES, readJSON(C.STORE_ROUTES, []).filter(r => String(r.id) !== id));
-      const recs = readJSON(C.STORE_RECORDS, {});
-      delete recs[id];
-      writeJSON(C.STORE_RECORDS, recs);
+      MODES.forEach(m => { const recs = readJSON(storeKey(m), {}); delete recs[id]; writeJSON(storeKey(m), recs); });
       return true;
     },
 
-    // Рекорд на трассе: { time (секунды), avgKmh, date } или null
-    getRecord(routeId) { return readJSON(C.STORE_RECORDS, {})[String(routeId)] || null; },
+    // Рекорд на трассе для вида старта ('roll' — с хода, 'stand' — с места): { time (секунды), avgKmh, date } или null
+    getRecord(routeId, mode) { return readJSON(storeKey(mode), {})[String(routeId)] || null; },
+    // Лучший личный рекорд из двух видов: { rec, mode } или null
+    getRecordAny(routeId) {
+      let out = null;
+      MODES.forEach(m => { const r = this.getRecord(routeId, m); if (r && (!out || r.time < out.rec.time)) out = { rec: r, mode: m }; });
+      return out;
+    },
 
-    // Записать результат, если он лучше рекорда. Возвращает true, если это новый рекорд.
-    submitRecord(routeId, rec) {
-      const recs = readJSON(C.STORE_RECORDS, {});
+    // Записать результат, если он лучше рекорда этого вида старта. Возвращает true, если это новый рекорд.
+    submitRecord(routeId, rec, mode) {
+      const key = storeKey(mode);
+      const recs = readJSON(key, {});
       const id = String(routeId);
       if (recs[id] && recs[id].time <= rec.time) return false;
       recs[id] = rec;
-      writeJSON(C.STORE_RECORDS, recs);
+      writeJSON(key, recs);
       return true;
     }
   };

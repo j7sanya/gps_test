@@ -21,17 +21,19 @@ STR.routes = (function () {
 
   function showOnMap(r) {
     STR.map.showRoute(r.lines);
+    STR.run.arm(r.id);   // выбранная трасса стартует при проезде линии старта
     close();
     U.setStatus(`Трасса «${r.name}» · ${U.fmtKm(r.distance)}`);
   }
 
-  function remove(r) {
+  function remove(r, done) {
     const doDelete = async () => {
       const ok = await STR.api.deleteRoute(r.id);
       if (ok === false) { U.setStatus('Не удалось удалить трассу (нет связи с сервером).'); return; }
       STR.map.clearRoute();
       STR.run.refresh();
       render();
+      if (done) done();
     };
     const text = r.public ? `Удалить публичную трассу «${r.name}»? Она пропадёт у всех, рекорды на ней тоже удалятся.`
                           : `Удалить трассу «${r.name}»?`;
@@ -127,8 +129,8 @@ STR.routes = (function () {
 
     // Первый рекорд: только если в записи не было разрывов
     if (ok && firstRecord) {
-      STR.api.submitRecord(routeId, firstRecord);
-      if (publicNow) STR.api.sendRecord(routeId, firstRecord);
+      STR.api.submitRecord(routeId, firstRecord, 'roll');
+      if (publicNow) STR.api.sendRecord(routeId, firstRecord, 'roll');
     }
 
     const done = onSaved; pending = null; onSaved = null;
@@ -141,5 +143,6 @@ STR.routes = (function () {
     if (done) done(lines);
   }
 
-  return { open, close, openSaveDialog, closeSaveDialog, save };
+  const isOpen = () => $('routesOverlay').classList.contains('open');
+  return { isOpen, open, close, openSaveDialog, closeSaveDialog, save };
 })();

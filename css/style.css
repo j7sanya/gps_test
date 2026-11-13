@@ -19,7 +19,7 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
-  margin: 0; height: 100%;
+  margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none;   /* фон-страница не листается */
   background: var(--bg); color: var(--text);
   font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
 }
@@ -40,11 +40,11 @@ html, body {
 /* ---------- Нижняя панель ---------- */
 #panel {
   position: relative;
-  padding: 12px 12px calc(84px + env(safe-area-inset-bottom));   /* нижний отступ поднимает плашку со статистикой */
+  padding: 12px 12px calc(8px + env(safe-area-inset-bottom) * .35);   /* нижний край плиток — 8 px от края экрана (на iPhone с «полоской» чуть больше) */
   background: linear-gradient(180deg, var(--panel), #0d1015);
   border-top: 1px solid var(--line);
 }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 0; }
 .stat {
   background: var(--card); border: 1px solid var(--line); border-radius: 12px;
   padding: 8px 6px 7px; text-align: center;
@@ -339,10 +339,11 @@ body.building #locate { top: 12px; }
   background: #12161d; border-left: 1px solid var(--line); box-shadow: -12px 0 30px rgba(0,0,0,.5);
   padding: calc(18px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 8px;
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y;   /* меню листается само, а не фон */
   transform: translateX(100%); transition: transform .26s cubic-bezier(.2,.8,.2,1);
 }
 #drawer.open #drawerPanel { transform: translateX(0); }
-.dr-prof { display: flex; align-items: center; gap: 12px; padding: 4px 4px 16px; margin-bottom: 6px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.dr-prof { flex: none; display: flex; align-items: center; gap: 12px; padding: 4px 4px 16px; margin-bottom: 6px; border-bottom: 1px solid var(--line); cursor: pointer; }
 .dr-ava {
   width: 54px; height: 54px; border-radius: 50%; flex: none; overflow: hidden; border: 3px solid var(--accent);
   background: var(--card-hi); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800;
@@ -352,7 +353,7 @@ body.building #locate { top: 12px; }
 .dr-who b { display: block; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dr-who small { color: var(--hint); font-size: 12px; }
 .dr-item {
-  display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line);
+  flex: none; display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line);
   border-radius: 14px; padding: 13px 12px; cursor: pointer; user-select: none; -webkit-user-select: none;
 }
 .dr-item:active { background: var(--card-hi); }
@@ -628,3 +629,46 @@ body.fh #launchOverlay { transform: scaleX(-1); }
 .mp-card b { display: block; font-size: 15px; }
 .mp-card small { color: var(--hint); font-size: 12px; }
 .mp-card .mp-ok { margin-left: auto; color: var(--accent); font-weight: 700; font-size: 13px; }
+
+#drawerDim { touch-action: none; }
+#drawerPanel > .dr-ver { flex: none; }
+
+/* ---------- Карточка трассы ---------- */
+#trackOverlay { display: none; position: fixed; inset: 0; z-index: 3100; flex-direction: column; background: var(--bg); color: var(--text); }
+#trackOverlay.open { display: flex; }
+#tcMapBox { position: relative; height: 40%; min-height: 230px; flex: none; background: #121820; }
+#tcMap { position: absolute; inset: 0; }
+.tc-back { position: absolute; left: 12px; top: calc(12px + env(safe-area-inset-top)); z-index: 5; width: 38px; height: 38px; padding: 0; border-radius: 50%; background: rgba(17,20,26,.85); color: var(--text); box-shadow: 0 2px 10px rgba(0,0,0,.5); border: 1px solid var(--line); font-size: 24px; line-height: 1; }
+#tcHead { position: absolute; left: 0; right: 0; bottom: 16px; padding: 36px 16px 6px; background: linear-gradient(0deg, rgba(11,13,16,.92), rgba(11,13,16,0)); z-index: 3; pointer-events: none; }
+#tcHead h1 { margin: 0; font-size: 22px; font-style: italic; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
+#tcMeta { font-size: 12.5px; color: #c4ccd8; margin-top: 3px; }
+#tcSheet { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border-radius: 22px 22px 0 0; margin-top: -18px; position: relative; z-index: 6; border-top: 1px solid var(--line); }
+.tc-grab { width: 40px; height: 4px; border-radius: 9px; background: #3a4350; margin: 8px auto 6px; flex: none; }
+#tcScroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 4px 14px 10px; }
+.tc-seg { display: flex; background: var(--card); border-radius: 12px; padding: 3px; margin-bottom: 10px; border: 1px solid var(--line); }
+.tc-seg div { flex: 1; text-align: center; padding: 10px 4px; border-radius: 10px; font-size: 14px; font-weight: 700; color: var(--hint); cursor: pointer; }
+.tc-seg div.on { background: var(--accent); color: #fff; }
+.tc-mine { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.tc-lbl { font-size: 13px; color: var(--text); }
+.tc-sub { font-size: 11.5px; color: var(--hint); margin-top: 2px; }
+.tc-time { font-family: var(--mono); font-size: 19px; font-weight: 700; color: var(--warn); white-space: nowrap; }
+.tc-time.dim { color: var(--hint); }
+.tc-empty { color: var(--hint); text-align: center; white-space: pre-line; padding: 22px 8px; font-size: 14px; }
+.tc-row { display: flex; align-items: center; gap: 10px; padding: 9px 6px; border-bottom: 1px solid #1d222b; }
+.tc-row.me { background: rgba(255,45,61,.09); border-radius: 8px; }
+.tc-n { width: 26px; text-align: center; font-family: var(--mono); color: var(--hint); font-weight: 800; flex: none; }
+.tc-who { flex: 1; min-width: 0; }
+.tc-who b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-who b .link { cursor: pointer; }
+.tc-who span { font-size: 11px; color: var(--hint); }
+.tc-v { font-family: var(--mono); font-size: 11px; color: var(--hint); white-space: nowrap; }
+.tc-t { font-family: var(--mono); font-size: 15px; font-weight: 700; white-space: nowrap; min-width: 74px; text-align: right; }
+.tc-note { font-size: 11.5px; color: var(--hint); text-align: center; margin: 12px 4px 4px; line-height: 1.4; }
+.tc-del { color: var(--bad); text-align: center; font-size: 13px; padding: 12px; cursor: pointer; }
+#tcBtns { flex: none; display: flex; gap: 8px; padding: 8px 14px calc(10px + env(safe-area-inset-bottom) * .5); border-top: 1px solid var(--line); background: var(--panel); }
+#tcBtns button { flex: 1; padding: 13px 6px; font-size: 14px; border-radius: 13px; box-shadow: none; }
+#tcBtns button.alt { background: var(--card-hi); border: 1px solid var(--line); color: var(--text); }
+#trackOverlay .maplibregl-ctrl-top-right { margin-top: calc(10px + env(safe-area-inset-top)); }
+.ov-acts { display: flex; gap: 8px; align-items: center; }
+.ov-plus { width: 36px; height: 36px; padding: 0; border-radius: 50%; font-size: 22px; line-height: 1; box-shadow: none; }
+.rc-chev { align-self: center; color: var(--hint); font-size: 22px; padding-right: 2px; }

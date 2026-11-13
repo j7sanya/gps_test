@@ -134,7 +134,7 @@ STR.history = (function () {
   function tag(r) {
     if (r.valid === false) return '<span class="tag t-bad">не засчитан</span>';
     if (r.record) return '<span class="tag t-rec">🏆 РЕКОРД</span>';
-    const rec = STR.api.getRecord(r.routeId);
+    const rec = STR.api.getRecord(r.routeId, r.start === 'stand' ? 'stand' : 'roll');
     if (rec && rec.time) { const d = r.time - rec.time; if (d > 0.005) return `<span class="tag t-bad">+${d.toFixed(2)}</span>`; }
     return '';
   }
@@ -232,6 +232,7 @@ STR.history = (function () {
     if (!rmap) {
       rmap = new maplibregl.Map({ container: 'runMap', style: M.styleUrl(), center: [0, 0], zoom: 2, attributionControl: false, maxZoom: 19, dragRotate: false, pitchWithRotate: false });
       rmap.touchZoomRotate.disableRotation();
+      rmap.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
       rcase = M.lineLayer(rmap, 'rcase', { 'line-color': '#0b0d10', 'line-width': 10, 'line-opacity': 0.85 });
       rheat = M.lineLayer(rmap, 'rheat', { 'line-color': ['get', 'c'], 'line-width': 6, 'line-opacity': 1 });
       rmap.on('style.load', () => M.russianLabels(rmap));

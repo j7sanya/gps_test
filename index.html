@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=31 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=34 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=31">
+<link rel="stylesheet" href="css/style.css?v=34">
 </head>
 
 <body>
@@ -77,7 +77,7 @@
 <div id="routesOverlay">
   <div class="ov-head">
     <h2>🏁 Трассы</h2>
-    <button class="ov-close" id="routesClose">✕</button>
+    <div class="ov-acts"><button class="ov-plus" id="routesNew" aria-label="Создать трассу">+</button><button class="ov-close" id="routesClose">✕</button></div>
   </div>
   <div id="rsTop">
     <input id="rsQ" type="search" placeholder="🔍 Название трассы или город" autocomplete="off">
@@ -218,9 +218,7 @@
       <div class="dr-ava" id="drAva"></div>
       <div class="dr-who"><b id="drNick">Профиль</b><small id="drId"></small></div>
     </div>
-    <div class="dr-item" data-go="routes"><i>🏁</i><div><b>Трассы</b><small>Список и создание</small></div><em>›</em></div>
-    <div class="dr-item" data-go="near"><i>📍</i><div><b>Трассы рядом</b><small>Старт с места</small></div><em>›</em></div>
-    <div class="dr-item" data-go="records"><i>🏆</i><div><b>Рекорды</b><small>Таблицы и ваше место</small></div><em>›</em></div>
+    <div class="dr-item" data-go="routes"><i>🏁</i><div><b>Трассы</b><small>Поиск, рекорды, рядом, создание</small></div><em>›</em></div>
     <div class="dr-item" data-go="history"><i>🕘</i><div><b>История заездов</b><small>Карта скорости заездов</small></div><em>›</em></div>
     <div class="dr-item" data-go="hud"><i>🪟</i><div><b>Проекция</b><small>Скорость на лобовом стекле</small></div><em>›</em></div>
     <div class="dr-item" data-go="settings"><i>⚙️</i><div><b>Настройки</b><small>Спидометр, светофор, проекция, экран</small></div><em>›</em></div>
@@ -250,13 +248,18 @@
   <div id="profileBody"></div>
 </div>
 
-<!-- Окно «Рекорды»: список трасс -> таблица рекордов трассы -->
-<div id="recordsOverlay">
-  <div class="ov-head">
-    <h2 id="recTitle">🏆 Рекорды</h2>
-    <button class="ov-close" id="recordsClose">✕</button>
+<!-- Карточка трассы: карта сверху, таблицы рекордов «С хода» / «С места» ниже -->
+<div id="trackOverlay">
+  <div id="tcMapBox">
+    <div id="tcMap"></div>
+    <button class="tc-back" id="tcBack" aria-label="Назад">‹</button>
+    <div id="tcHead"><h1 id="tcTitle"></h1><div id="tcMeta"></div></div>
   </div>
-  <div id="recordsList"></div>
+  <div id="tcSheet">
+    <div class="tc-grab"></div>
+    <div id="tcScroll"></div>
+    <div id="tcBtns"><button class="alt" id="tcStand">🚦 Старт с места</button><button id="tcRoll">🏁 Поехать с хода</button></div>
+  </div>
 </div>
 
 <!-- Окно сохранения новой трассы -->
@@ -277,26 +280,26 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=31"></script>   <!-- настройки -->
-<script src="js/utils.js?v=31"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=31"></script>      <!-- карта -->
-<script src="js/ui.js?v=31"></script>
-<script src="js/speedo.js?v=31"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=31"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=31"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=31"></script>     <!-- привязка к дорогам -->
-<script src="js/search.js?v=31"></script>   <!-- поиск трасс: карточки и фильтры -->
-<script src="js/routes.js?v=31"></script>   <!-- окно «Трассы» -->
-<script src="js/history.js?v=31"></script>   <!-- история заездов и тепловая карта -->
-<script src="js/launch.js?v=31"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=31"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/hud.js?v=31"></script>      <!-- проекция на стекло и настройка экрана -->
-<script src="js/menu.js?v=31"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=31"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=31"></script> <!-- конфетти при рекорде -->
-<script src="js/records.js?v=31"></script>  <!-- окно «Рекорды» -->
-<script src="js/profile.js?v=31"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=31"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=31"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=34"></script>   <!-- настройки -->
+<script src="js/utils.js?v=34"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=34"></script>      <!-- карта -->
+<script src="js/ui.js?v=34"></script>
+<script src="js/speedo.js?v=34"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=34"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=34"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=34"></script>     <!-- привязка к дорогам -->
+<script src="js/search.js?v=34"></script>   <!-- поиск трасс: карточки и фильтры -->
+<script src="js/track.js?v=34"></script>    <!-- карточка трассы: карта и рекорды -->
+<script src="js/routes.js?v=34"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=34"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=34"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=34"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/hud.js?v=34"></script>      <!-- проекция на стекло и настройка экрана -->
+<script src="js/menu.js?v=34"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=34"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=34"></script> <!-- конфетти при рекорде -->
+<script src="js/profile.js?v=34"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=34"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=34"></script>      <!-- запуск и кнопки -->
 </body>
 </html>

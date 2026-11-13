@@ -17,7 +17,7 @@ STR.search = (function () {
   let F = Object.assign({}, DEF, rj(KEY_F, {}));
   const save = () => wj(KEY_F, F);
 
-  let handlers = null, openId = null, cities = rj(KEY_CITY, {}), cityBusy = false, posTimer = null;
+  let handlers = null, cities = rj(KEY_CITY, {}), cityBusy = false, posTimer = null;
 
   // ---------- Геометрия ----------
   const M_LAT = 111320;
@@ -80,8 +80,10 @@ STR.search = (function () {
   function created(r) { const m = /^local-(\d+)$/.exec(r.id); return m ? +m[1] : (r.created || 0); }
   function stats(r) {
     const runs = STR.api.getRuns().filter(x => String(x.routeId) === String(r.id)).length;
-    const rec = STR.api.getRecord(r.id), best = STR.api.getBest(r.id);
-    return { runs, rec, best, drivers: STR.api.getBoard(r.id).length };
+    const mine = STR.api.getRecordAny(r.id), top = STR.api.getBestAny(r.id);
+    const rec = mine ? mine.rec : null, best = top ? top.x : null;   // лучший из двух видов старта
+    const drivers = STR.api.getBoard(r.id, 'roll').length + STR.api.getBoard(r.id, 'stand').length;
+    return { runs, rec, recMode: mine ? mine.mode : null, best, bestMode: top ? top.mode : null, drivers };
   }
   function row(r, p) {
     const i = info(r), st = stats(r);
@@ -131,28 +133,24 @@ STR.search = (function () {
   // ---------- Список ----------
   const plural = (n, a, b, c) => { const m = n % 100, d = n % 10; return (m > 10 && m < 20) ? c : d === 1 ? a : (d > 1 && d < 5) ? b : c; };
 
+  const MI = { roll: '🏁', stand: '🚦' };
   function cardHTML(x) {
     const { r, i, st } = x;
-    const best = st.best ? `🏆 ${U.fmtPrecise(st.best.time)} · ${esc(st.best.name)}` : st.rec ? `🏆 ${U.fmtPrecise(st.rec.time)} · вы` : 'Станьте первым ⚡';
+    const best = st.best ? `🏆 ${U.fmtPrecise(st.best.time)} · ${esc(st.best.name)} ${MI[st.bestMode]}` : st.rec ? `🏆 ${U.fmtPrecise(st.rec.time)} · вы ${MI[st.recMode]}` : 'Станьте первым ⚡';
     const tags = [`<span class="tag">${i.ring ? '🔁 Кольцо' : '➡ Прямая'}</span>`];
-    if (st.drivers) tags.push(`<span class="tag">👥 ${st.drivers} ${plural(st.drivers, 'водитель', 'водителя', 'водителей')}</span>`);
+    if (st.drivers) tags.push(`<span class="tag">👥 ${st.drivers} ${plural(st.drivers, 'результат', 'результата', 'результатов')}</span>`);
     if (st.runs) tags.push(`<span class="tag">🏁 ${st.runs} ${plural(st.runs, 'ваш заезд', 'ваших заезда', 'ваших заездов')}</span>`);
     if (r.public) tags.push(`<span class="tag">🌍 ${r.mine ? 'ваша' : esc(r.author)}</span>`);
     if (x.created && Date.now() - x.created < 7 * 864e5) tags.unshift('<span class="tag new">NEW</span>');
-    const rank = STR.api.getMyRank(r.id);
-    const more = [
-      st.rec ? `<div class="rc-line">Ваш рекорд: <b>${U.fmtPrecise(st.rec.time)}</b> · ${Math.round(st.rec.avgKmh)} км/ч${rank ? ` · вы ${rank}-й` : ''}</div>` : '<div class="rc-line">У вас здесь ещё нет рекорда</div>',
-      `<div class="acts"><button data-act="map">Показать на карте</button><button data-act="go" class="alt">🚦 С места</button>${(r.local || r.mine) ? '<button data-act="del" class="del">Удалить</button>' : ''}</div>`
-    ].join('');
-    return `<div class="rc${openId === r.id ? ' open' : ''}" data-id="${esc(r.id)}">
+    return `<div class="rc" data-id="${esc(r.id)}">
       <div class="rc-main">
         <div class="rc-ph" style="background:${i.bg}">${i.svg}${x.d !== null ? `<span class="rc-badge">${fmtD(x.d)}</span>` : ''}</div>
         <div class="rc-in"><h3>${esc(r.name)}</h3>
           <div class="rc-meta">${x.city ? esc(x.city) + ' · ' : ''}${(x.km).toFixed(1)} км</div>
           <div class="rc-tags">${tags.join('')}</div>
           <div class="rc-rec${st.best || st.rec ? ' has' : ''}">${best}</div></div>
-      </div>
-      <div class="rc-more">${more}</div></div>`;
+        <div class="rc-chev">›</div>
+      </div></div>`;
   }
 
   function redraw() {
@@ -236,20 +234,11 @@ STR.search = (function () {
     if (c.dataset.k === '*') { const s = F.sort; F = Object.assign({}, DEF, { sort: s, q: F.q }); } else clearKey(c.dataset.k);
     save(); redraw();
   });
+  // Клик по трассе открывает полную карточку (js/track.js)
   $('routesList').addEventListener('click', e => {
     const card = e.target.closest('.rc'); if (!card) return;
-    const id = card.dataset.id, r = STR.api.getRoutes().find(x => String(x.id) === id);
-    const b = e.target.closest('button[data-act]');
-    if (b && r) {
-      const a = b.dataset.act;
-      if (a === 'map') handlers.showOnMap(r);
-      else if (a === 'go') { handlers.close(); STR.launch.choose(r.id, true); }
-      else if (a === 'del') handlers.remove(r);
-      return;
-    }
-    openId = openId === id ? null : id;
-    card.classList.toggle('open', openId === id);
-    document.querySelectorAll('#routesList .rc.open').forEach(c => { if (c !== card) c.classList.remove('open'); });
+    const r = STR.api.getRoutes().find(x => String(x.id) === card.dataset.id);
+    if (r) STR.track.open(r, handlers);
   });
 
   // Вызывается из routes.js при открытии окна и после изменений
@@ -267,5 +256,8 @@ STR.search = (function () {
       }, 1500);
     }
   }
-  return { render, redraw, openSheet };
+  // Описание трассы для карточки: город, тип, расстояние до старта
+  function describe(r) { const i = info(r), p = pos(); return { city: cityOf(r), ring: i.ring, d: p ? dist([p.lat, p.lon], i.start) : null }; }
+  const fmtDist = fmtD;
+  return { render, redraw, openSheet, describe, fmtDist };
 })();
