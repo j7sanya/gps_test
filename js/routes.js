@@ -17,70 +17,7 @@ STR.routes = (function () {
     try { STR.tg.BackButton.offClick(close); STR.tg.BackButton.hide(); } catch (e) {}
   }
 
-  function render() {
-    const box = $('routesList');
-    box.textContent = '';
-    const list = STR.api.getRoutes();
-
-    if (!list.length) {
-      const e = document.createElement('div');
-      e.className = 'empty';
-      e.textContent = 'Трасс пока нет.\nЗапишите заезд кнопкой «Начать запись», затем нажмите ' +
-                      '«Сохранить как трассу»: она появится здесь вместе с первым рекордом.';
-      box.appendChild(e);
-      return;
-    }
-
-    list.forEach(r => {
-      const card = document.createElement('div');
-      card.className = 'route-card';
-
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = r.name;
-
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      meta.textContent = '📏 ' + U.fmtKm(r.distance) + (r.public ? (r.mine ? ' · 🌍 ваша публичная' : ` · 🌍 автор: ${r.author}`) : '');
-
-      const recEl = document.createElement('div');
-      recEl.className = 'rec';
-      const rec = STR.api.getRecord(r.id);
-      if (rec) recEl.classList.add('has');   // рекорд подсвечивается золотым (см. style.css)
-      recEl.textContent = rec
-        ? `🏆 Рекорд: ${U.fmtPrecise(rec.time)} · ${Math.round(rec.avgKmh)} км/ч средняя · ${U.fmtDate(rec.date)}`
-        : '🏆 Рекорда пока нет';
-
-      const best = STR.api.getBest(r.id);   // лучший результат среди всех игроков (если подключён сервер)
-      let bestEl = null;
-      if (best) {
-        bestEl = document.createElement('div');
-        bestEl.className = 'rec best';
-        const rank = STR.api.getMyRank(r.id);
-        bestEl.textContent = `👑 Лучший: ${best.name} · ${U.fmtPrecise(best.time)}` + (rank ? ` · вы ${rank}-й` : '');
-      }
-
-      const acts = document.createElement('div');
-      acts.className = 'acts';
-      const show = document.createElement('button');
-      show.textContent = 'Показать на карте';
-      show.onclick = () => showOnMap(r);
-      acts.appendChild(show);
-
-      if (r.local || r.mine) {   // удалять можно только свои трассы (локальные и свои публичные)
-        const del = document.createElement('button');
-        del.className = 'del';
-        del.textContent = 'Удалить';
-        del.onclick = () => remove(r);
-        acts.appendChild(del);
-      }
-
-      card.append(name, meta, recEl);
-      if (bestEl) card.appendChild(bestEl);
-      card.appendChild(acts);
-      box.appendChild(card);
-    });
-  }
+  function render() { STR.search.render({ showOnMap, remove, close }); }
 
   function showOnMap(r) {
     STR.map.showRoute(r.lines);

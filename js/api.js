@@ -69,7 +69,7 @@ STR.api = (function () {
       const me = myTgId();
       pubRoutes = rows.map(r => ({
         id: 'pub-' + r.id, name: r.name, distance: Number(r.distance), lines: r.lines,
-        local: false, public: true, author: (r.players && r.players.nick) || 'Игрок', mine: me !== null && r.owner === me
+        created: r.created_at ? Date.parse(r.created_at) : 0, local: false, public: true, author: (r.players && r.players.nick) || 'Игрок', mine: me !== null && r.owner === me
       }));
       return true;
     } catch (e) { return false; }
