@@ -26,20 +26,16 @@ html, body {
 #app { display: flex; flex-direction: column; height: 100%; position: relative; }
 #map { flex: 1; min-height: 0; background: var(--bg); }
 
-/* ---------- Карта: тёмная ----------
-   Обычные плитки OpenStreetMap затемняются фильтром.
-   Не нравится — удалите правило .leaflet-tile-pane целиком. */
-.leaflet-container { background: var(--bg); font-family: inherit; }
-.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.88) contrast(.92) saturate(.6); }
-.leaflet-control-attribution {
-  background: rgba(11,13,16,.75) !important; color: var(--hint) !important; font-size: 10px;
-}
-.leaflet-control-attribution a { color: var(--hint) !important; }
-.leaflet-tooltip {
-  background: var(--panel); color: var(--text); border: 1px solid var(--line);
-  box-shadow: 0 4px 12px rgba(0,0,0,.5); font-weight: 600;
-}
-.leaflet-tooltip-top:before { border-top-color: var(--line); }
+/* ---------- Карта (MapLibre) ----------
+   Стиль (тёмный, светлый…) выбирается в Настройки → Карта. */
+.maplibregl-map { font-family: inherit; }
+.maplibregl-ctrl-attrib { background: rgba(11,13,16,.75) !important; color: var(--hint) !important; font-size: 10px; }
+.maplibregl-ctrl-attrib a { color: var(--hint) !important; }
+.maplibregl-ctrl-attrib-button { filter: invert(1); }
+.me-dot { width: 18px; height: 18px; border-radius: 50%; background: #19c8ff; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(25,200,255,.22), 0 2px 8px rgba(0,0,0,.5); }
+.rt-pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #0b0d10; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.rt-pt.fn { background: #ff2d3d; }
+.rt-pt.big { width: 14px; height: 14px; }
 
 /* ---------- Нижняя панель ---------- */
 #panel {
@@ -106,11 +102,11 @@ button.stop {
 #menuBtn svg, #locate svg { width: 22px; height: 22px; display: block; }
 
 /* ---------- Окно «Трассы» ---------- */
-#routesOverlay, #recordsOverlay, #profileOverlay, #speedoOverlay, #settingsOverlay, #lightsOverlay, #nearOverlay, #historyOverlay, #runOverlay, #rfOverlay, #hudSetOverlay, #screenOverlay {
+#routesOverlay, #recordsOverlay, #profileOverlay, #speedoOverlay, #settingsOverlay, #mapOverlay, #lightsOverlay, #nearOverlay, #historyOverlay, #runOverlay, #rfOverlay, #hudSetOverlay, #screenOverlay {
   display: none; position: fixed; inset: 0; z-index: 3000;
   flex-direction: column; background: var(--bg); color: var(--text);
 }
-#routesOverlay.open, #recordsOverlay.open, #profileOverlay.open, #speedoOverlay.open, #settingsOverlay.open, #lightsOverlay.open, #nearOverlay.open, #historyOverlay.open, #runOverlay.open, #rfOverlay.open, #hudSetOverlay.open, #screenOverlay.open { display: flex; }
+#routesOverlay.open, #recordsOverlay.open, #profileOverlay.open, #speedoOverlay.open, #settingsOverlay.open, #mapOverlay.open, #lightsOverlay.open, #nearOverlay.open, #historyOverlay.open, #runOverlay.open, #rfOverlay.open, #hudSetOverlay.open, #screenOverlay.open { display: flex; }
 #rfOverlay { z-index: 3600; }
 #profileOverlay { z-index: 3500; }   /* профиль открывается и поверх окна «Рекорды» */
 .ov-head {
@@ -476,8 +472,8 @@ body.building #locate { top: 12px; }
 .lg-hint { color: var(--hint); font-size: 12px; text-align: center; margin-top: 6px; }
 .lg-card .lg-prev .tl, .lg-card .lg-prev .tree { margin-top: 0; }
 .lg-demo { margin-bottom: 16px; }
-#settingsBody, #lightsBody, #nearBody { flex: 1; overflow-y: auto; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
-#lightsBody { display: block; }
+#settingsBody, #lightsBody, #nearBody, #mapBody { flex: 1; overflow-y: auto; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+#lightsBody, #mapBody { display: block; }
 .tgl-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; position: relative; }
 .tgl-row b { display: block; font-size: 15px; }
 .tgl-row small { color: var(--hint); font-size: 12px; }
@@ -529,7 +525,7 @@ body.building #locate { top: 12px; }
 .rv-leg { position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 500; background: rgba(17,20,26,.92); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
 .rv-bar { height: 7px; border-radius: 5px; background: linear-gradient(90deg, rgb(43,108,255), rgb(25,200,255), rgb(34,211,107), rgb(255,210,26), rgb(255,122,26), rgb(255,45,61)); }
 .rv-lb { display: flex; justify-content: space-between; font: 600 10px sans-serif; color: var(--hint); margin-top: 3px; }
-.rv-pin { transform: translate(-50%, -140%); white-space: nowrap; background: #fff; color: #000; border-radius: 8px; padding: 2px 7px; font: 700 11px sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.rv-pin { white-space: nowrap; background: #fff; color: #000; border-radius: 8px; padding: 2px 7px; font: 700 11px sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
 .rv-big { display: flex; justify-content: space-between; align-items: flex-end; padding: 12px 16px 4px; }
 .rv-big small { display: block; color: var(--hint); font-size: 12px; margin-bottom: 3px; }
 #rvTime { font: 800 36px/1 var(--mono); }
@@ -623,3 +619,12 @@ body.fh #launchOverlay { transform: scaleX(-1); }
 .hc-sw { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; padding: 0; box-shadow: none; }
 .hc-sw.sel { border-color: #fff; }
 .hud-note { font-size: 12px; color: var(--hint); line-height: 1.5; margin-top: 12px; }
+
+/* Выбор стиля карты */
+.mp-card { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; margin-bottom: 12px; cursor: pointer; display: flex; gap: 12px; align-items: center; }
+.mp-card.sel { border-color: var(--accent); }
+.mp-card .mp-sw { width: 84px; height: 56px; border-radius: 10px; flex: none; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.12); }
+.mp-card .mp-sw i { position: absolute; display: block; }
+.mp-card b { display: block; font-size: 15px; }
+.mp-card small { color: var(--hint); font-size: 12px; }
+.mp-card .mp-ok { margin-left: auto; color: var(--accent); font-weight: 700; font-size: 13px; }

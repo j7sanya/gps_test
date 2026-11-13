@@ -20,6 +20,24 @@ STR.settings = (function () {
   $('setHud').addEventListener('click', () => openChild(STR.hud.openSettings));
   $('setScreen').addEventListener('click', () => openChild(STR.hud.openScreen));
   $('setLights').addEventListener('click', () => openChild(openLights));
+  $('setMap').addEventListener('click', () => openChild(openMap));
+
+  // ---------- Стиль карты ----------
+  function renderMap() {
+    const box = $('mapStyles'); box.innerHTML = '';
+    STR.map.styles.forEach(([key, title, hint, , c]) => {
+      const sel = STR.map.getStyleKey() === key;
+      const el = document.createElement('div');
+      el.className = 'mp-card' + (sel ? ' sel' : '');
+      el.innerHTML = `<div class="mp-sw" style="background:${c[0]}"><i style="left:-6px;top:30px;width:110px;height:9px;background:${c[1]};transform:rotate(-18deg)"></i><i style="left:30px;top:-8px;width:8px;height:80px;background:${c[2]};transform:rotate(24deg)"></i><i style="left:8px;top:8px;width:26px;height:16px;border-radius:4px;background:${c[2]};opacity:.5"></i></div>
+        <div><b>${title}</b><small>${hint}</small></div><span class="mp-ok">${sel ? '✓' : ''}</span>`;
+      el.addEventListener('click', () => { STR.map.setStyle(key); renderMap(); });
+      box.appendChild(el);
+    });
+  }
+  function openMap() { renderMap(); $('mapOverlay').classList.add('open'); bb(true, closeMap); }
+  function closeMap() { $('mapOverlay').classList.remove('open'); bb(false, closeMap); resume(); }
+  $('mapClose').addEventListener('click', closeMap);
 
   // ---------- Светофор: стиль отсчёта и переключатели ----------
   const lightsOpen = () => $('lightsOverlay').classList.contains('open');

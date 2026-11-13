@@ -9,7 +9,9 @@ STR.builder = (function () {
   let active = false;
   let pts = [];            // точки пользователя: [{lat, lng}]
   let loop = false;        // кольцо: финиш там же, где старт
-  let layer = null;        // слой Leaflet с маркерами и линией
+  let routeL = null;       // зелёная линия построенного маршрута
+  let markers = [];        // маркеры точек (MapLibre)
+  let lastDrag = 0;        // когда в последний раз перетаскивали маркер (чтобы не принять это за клик)
   let cross = null;        // прицел в центре карты
   let route = null;        // построенный маршрут: { coords: [[lat, lon], ...], distance }
   let busy = false, error = '', seq = 0, timer = null;
@@ -24,13 +26,13 @@ STR.builder = (function () {
     STR.map.clearRoute();
     active = true; pts = []; loop = false; route = null; busy = false; error = '';
     $('bLoopBox').checked = false;
-    layer = L.layerGroup().addTo(map());
+    routeL = STR.map.lineLayer(map(), 'bld', { 'line-color': '#22d36b', 'line-width': 6, 'line-opacity': 0.95 });
     cross = document.createElement('div');
     cross.className = 'crosshair';
     cross.innerHTML = '<svg viewBox="0 0 34 34" fill="none" stroke="#ff2d3d" stroke-width="2.5" stroke-linecap="round"><circle cx="17" cy="17" r="6"/><path d="M17 2v8M17 24v8M2 17h8M24 17h8"/></svg>';
     map().getContainer().appendChild(cross);
     document.body.classList.add('building');
-    map().invalidateSize();
+    map().resize();
     try { STR.tg.BackButton.show(); STR.tg.BackButton.onClick(askExit); } catch (e) {}
     redraw();
   }
@@ -39,10 +41,11 @@ STR.builder = (function () {
     if (!active) return;
     active = false;
     clearTimeout(timer); seq++;
-    if (layer) { layer.remove(); layer = null; }
+    if (routeL) { routeL.remove(); routeL = null; }
+    markers.forEach(m => m.remove()); markers = [];
     if (cross) { cross.remove(); cross = null; }
     document.body.classList.remove('building');
-    map().invalidateSize();
+    map().resize();
     try { STR.tg.BackButton.offClick(askExit); STR.tg.BackButton.hide(); } catch (e) {}
     pts = []; route = null;
     if (silent !== true) U.setStatus('Выберите трассу в списке «🏁 Трассы» или создайте новую кнопкой «+».');
@@ -63,7 +66,7 @@ STR.builder = (function () {
   function addPoint() {
     if (!active) return;
     const c = map().getCenter();
-    pts.push({ lat: c.lat, lng: c.lng });
+    pts.push({ lat: c.lat, lng: c.lng });   // c — LngLat MapLibre
     changed();
   }
   function undo() { if (pts.length) { pts.pop(); changed(); } }
@@ -108,21 +111,29 @@ STR.builder = (function () {
 
   // ---------- Рисование ----------
   function icon(cls, label) {
-    return L.divIcon({ className: '', html: `<div class="bm ${cls}">${label}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
+    const d = document.createElement('div');
+    d.className = 'bm ' + cls; d.textContent = label;
+    return d;
   }
 
   function redraw() {
     if (!active) return;
-    layer.clearLayers();
-    if (route) L.polyline(route.coords, { color: '#22d36b', weight: 6, opacity: 0.95 }).addTo(layer);
+    markers.forEach(m => m.remove()); markers = [];
+    routeL.set(route ? STR.map.fc([STR.map.line(route.coords.map(STR.map.ll))]) : null);
     pts.forEach((p, i) => {
       const last = i === pts.length - 1;
       let cls = 'via', label = String(i);
       if (i === 0) { cls = 'start'; label = 'С'; }
       else if (last && !loop) { cls = 'fin'; label = 'Ф'; }
-      const m = L.marker([p.lat, p.lng], { icon: icon(cls, label), draggable: true }).addTo(layer);
-      m.on('dragend', () => { const ll = m.getLatLng(); pts[i] = { lat: ll.lat, lng: ll.lng }; changed(); });
-      m.on('click', () => confirmBox(`Убрать точку «${label === 'С' ? 'Старт' : label === 'Ф' ? 'Финиш' : label}»?`, () => removeAt(i)));
+      const el = icon(cls, label);
+      const m = new maplibregl.Marker({ element: el, draggable: true }).setLngLat([p.lng, p.lat]).addTo(map());
+      m.on('dragend', () => { lastDrag = Date.now(); const q = m.getLngLat(); pts[i] = { lat: q.lat, lng: q.lng }; changed(); });
+      el.addEventListener('click', ev => {
+        ev.stopPropagation();
+        if (Date.now() - lastDrag < 400) return;   // это окончание перетаскивания, а не нажатие
+        confirmBox(`Убрать точку «${label === 'С' ? 'Старт' : label === 'Ф' ? 'Финиш' : label}»?`, () => removeAt(i));
+      });
+      markers.push(m);
     });
     updatePanel();
   }

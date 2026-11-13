@@ -203,7 +203,7 @@ STR.history = (function () {
 
   // ---------- Окно заезда ----------
   const runOpen = () => $('runOverlay').classList.contains('open');
-  let rmap = null, rlayer = null, curId = null;
+  let rmap = null, rheat = null, rcase = null, rmarks = [], curId = null;
 
   function drawStar(r) { const b = $('rvStar'); b.textContent = r.star ? '⭐' : '☆'; b.classList.toggle('on', !!r.star); }
 
@@ -227,22 +227,28 @@ STR.history = (function () {
   }
 
   function drawHeat(pts, r) {
-    if (!window.L) return;
+    if (!window.maplibregl) return;
+    const M = STR.map;
     if (!rmap) {
-      rmap = L.map('runMap', { zoomControl: false, attributionControl: false });
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(rmap);
-      rlayer = L.layerGroup().addTo(rmap);
+      rmap = new maplibregl.Map({ container: 'runMap', style: M.styleUrl(), center: [0, 0], zoom: 2, attributionControl: false, maxZoom: 19, dragRotate: false, pitchWithRotate: false });
+      rmap.touchZoomRotate.disableRotation();
+      rcase = M.lineLayer(rmap, 'rcase', { 'line-color': '#0b0d10', 'line-width': 10, 'line-opacity': 0.85 });
+      rheat = M.lineLayer(rmap, 'rheat', { 'line-color': ['get', 'c'], 'line-width': 6, 'line-opacity': 1 });
+      rmap.on('style.load', () => M.russianLabels(rmap));
+      M.onStyle(fresh => { if (fresh && rmap) rmap.setStyle(M.styleUrl(), { diff: false }); });   // стиль сменили в настройках
     }
-    rlayer.clearLayers();
-    rmap.invalidateSize();
+    rmap.resize();
+    rmarks.forEach(m => m.remove()); rmarks = [];
     const { sm, vmax } = prep(pts), all = pts.map(p => [p.lat, p.lon]);
-    L.polyline(all, { color: '#0b0d10', weight: 10, opacity: .85, lineCap: 'round', lineJoin: 'round' }).addTo(rlayer);
-    groups(pts, sm, vmax).forEach(g => L.polyline(g.pts, { color: g.col, weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round' }).addTo(rlayer));
-    L.circleMarker(all[0], { radius: 6, color: '#0b0d10', weight: 2, fillColor: '#fff', fillOpacity: 1 }).bindTooltip('Старт').addTo(rlayer);
-    L.circleMarker(all[all.length - 1], { radius: 6, color: '#0b0d10', weight: 2, fillColor: '#ff2d3d', fillOpacity: 1 }).bindTooltip('Финиш').addTo(rlayer);
+    rcase.set(M.fc([M.line(all.map(M.ll))]));
+    rheat.set(M.fc(groups(pts, sm, vmax).filter(g => g.pts.length > 1).map(g => { const f = M.line(g.pts.map(M.ll)); f.properties.c = g.col; return f; })));
+    const pin = (p, el) => rmarks.push(new maplibregl.Marker({ element: el }).setLngLat(M.ll(p)).addTo(rmap));
+    const d1 = document.createElement('div'); d1.className = 'rt-pt st big'; pin(all[0], d1);
+    const d2 = document.createElement('div'); d2.className = 'rt-pt fn big'; pin(all[all.length - 1], d2);
     let mi = 0; sm.forEach((v, i) => { if (v > sm[mi]) mi = i; });
-    L.marker(all[mi], { icon: L.divIcon({ className: '', html: `<div class="rv-pin">⚡ ${Math.round(pts[mi].v)} км/ч</div>`, iconSize: [0, 0] }) }).addTo(rlayer);
-    rmap.fitBounds(all, { padding: [34, 34] });
+    const tag = document.createElement('div'); tag.className = 'rv-pin'; tag.textContent = '⚡ ' + Math.round(pts[mi].v) + ' км/ч';
+    rmarks.push(new maplibregl.Marker({ element: tag, anchor: 'bottom', offset: [0, -6] }).setLngLat(M.ll(all[mi])).addTo(rmap));
+    rmap.fitBounds(M.boundsOf(all), { padding: 34, duration: 0, maxZoom: 18 });
     $('rvLegMax').textContent = vmax + ' км/ч';
   }
 
