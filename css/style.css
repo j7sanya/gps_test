@@ -149,20 +149,7 @@ button.stop {
   display: none; position: fixed; inset: 0; z-index: 4000;
   background: rgba(0,0,0,.72); align-items: center; justify-content: center; padding: 20px;
 }
-#saveDialog.open, #nickGate.open, #gpsPermissionGate.open { display: flex; }
-#gpsPermissionGate {
-  display: none; position: fixed; inset: 0; z-index: 5000;
-  align-items: center; justify-content: center; padding: 20px;
-  background: rgba(0,0,0,.76); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-}
-.gps-permission-dlg { text-align: center; }
-.gps-permission-icon {
-  width: 54px; height: 54px; margin: 0 auto 12px; display: grid; place-items: center;
-  border-radius: 18px; color: var(--accent); background: rgba(25,200,255,.12);
-  border: 1px solid rgba(25,200,255,.25); font-size: 32px; font-weight: 800;
-}
-.gps-permission-dlg .row button { flex: 1; }
-
+#saveDialog.open, #nickGate.open { display: flex; }
 .dlg {
   background: var(--panel); color: var(--text); border: 1px solid var(--line);
   border-radius: 18px; padding: 18px; width: 100%; max-width: 360px;
