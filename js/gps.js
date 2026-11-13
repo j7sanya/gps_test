@@ -12,6 +12,41 @@ STR.gps = (function () {
   let timerId = null;     // таймер обновления цифр
   let lastPos = null;     // последнее известное положение
   let s = null;           // данные текущей записи
+  let locationPromptShown = false; // не дублируем окно в рамках одного запуска Mini App
+  let locationSettingsOpened = false;
+
+  function showLocationPrompt() {
+    if (locationPromptShown) return;
+    const gate = document.getElementById('gpsPermissionGate');
+    if (!gate) return;
+    locationPromptShown = true;
+    gate.classList.add('open');
+  }
+
+  function hideLocationPrompt() {
+    const gate = document.getElementById('gpsPermissionGate');
+    if (gate) gate.classList.remove('open');
+  }
+
+  function openLocationSettings() {
+    // Telegram разрешает открывать настройки только непосредственно по нажатию пользователя.
+    try {
+      const lm = STR.tg && STR.tg.LocationManager;
+      if (lm && typeof lm.openSettings === 'function') {
+        locationSettingsOpened = true;
+        lm.openSettings();
+      } else {
+        U.setStatus('Откройте настройки iPhone → Telegram → Геопозиция и разрешите доступ при использовании приложения.');
+      }
+    } catch (e) {
+      U.setStatus('Не удалось открыть настройки геолокации. Проверьте разрешение Telegram в настройках телефона.');
+    }
+  }
+
+  const gpsGateLater = document.getElementById('gpsPermissionLater');
+  const gpsGateSettings = document.getElementById('gpsPermissionSettings');
+  if (gpsGateLater) gpsGateLater.addEventListener('click', hideLocationPrompt);
+  if (gpsGateSettings) gpsGateSettings.addEventListener('click', openLocationSettings);
 
   function reset() {
     s = {
@@ -139,24 +174,52 @@ STR.gps = (function () {
       3: 'Время ожидания геолокации истекло.'
     };
     U.setStatus(texts[err.code] || ('Ошибка геолокации: ' + err.message));
+    if (err.code === 1) showLocationPrompt();
   }
 
-  // Просим у Telegram доступ к геолокации (новые версии Telegram)
+  // Проверяем разрешение Telegram. Если пользователь уже отказал, показываем
+  // собственное окно при каждом новом запуске Mini App, не зацикливая системный запрос.
   function askTelegramLocation() {
     return new Promise(resolve => {
-      const done = () => resolve();
       try {
         const lm = STR.tg && STR.tg.LocationManager;
-        if (!lm) return done();
-        setTimeout(done, 15000); // страховка, чтобы не зависнуть
+        if (!lm || typeof lm.init !== 'function') return resolve(true); // старый Telegram: fallback на браузерный GPS
+
+        let settled = false;
+        const finish = allowed => {
+          if (settled) return;
+          settled = true;
+          resolve(!!allowed);
+        };
+        const fallback = setTimeout(() => finish(true), 8000);
+
         lm.init(() => {
-          if (lm.isLocationAvailable && !lm.isAccessGranted) {
-            lm.getLocation(() => done()); // вызывает окно с запросом разрешения
-          } else {
-            done();
+          clearTimeout(fallback);
+          if (!lm.isLocationAvailable) return finish(true);
+          if (lm.isAccessGranted) return finish(true);
+
+          // Первый запрос — Telegram покажет системный диалог. Повторно после отказа
+          // системный диалог обычно не появляется, поэтому предлагаем открыть настройки.
+          if (lm.isAccessRequested) {
+            showLocationPrompt();
+            return finish(false);
           }
+
+          if (typeof lm.getLocation !== 'function') {
+            showLocationPrompt();
+            return finish(false);
+          }
+          const locationTimeout = setTimeout(() => { showLocationPrompt(); finish(false); }, 8000);
+          lm.getLocation(data => {
+            clearTimeout(locationTimeout);
+            if (data && Number.isFinite(data.latitude) && Number.isFinite(data.longitude)) finish(true);
+            else { showLocationPrompt(); finish(false); }
+          });
         });
-      } catch (e) { done(); }
+      } catch (e) {
+        // Не блокируем приложение: браузерный navigator.geolocation остаётся fallback.
+        resolve(true);
+      }
     });
   }
 
@@ -186,7 +249,8 @@ STR.gps = (function () {
   // Слежение за положением (работает и без записи, чтобы показывать вас на карте)
   async function startWatching() {
     if (watchId !== null) return;
-    await askTelegramLocation();
+    const telegramAllowed = await askTelegramLocation();
+    if (!telegramAllowed) { U.setStatus('Для GPS включите доступ к геолокации в настройках Telegram.'); return; }
     if (!('geolocation' in navigator)) { U.setStatus('Геолокация недоступна на этом устройстве.'); return; }
     watchId = navigator.geolocation.watchPosition(onPosition, onError, {
       enableHighAccuracy: true, maximumAge: 0, timeout: 20000
@@ -229,6 +293,21 @@ STR.gps = (function () {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { if (rec) s.hiddenCount++; return; }
     if (wantAwake()) keepScreenOn();   // экран снова включили — повторно запрашиваем блокировку
+
+    // Пользователь мог вернуться из настроек Telegram после выдачи разрешения.
+    if (locationSettingsOpened) {
+      locationSettingsOpened = false;
+      const lm = STR.tg && STR.tg.LocationManager;
+      if (lm && typeof lm.init === 'function') {
+        lm.init(() => {
+          if (lm.isAccessGranted) {
+            hideLocationPrompt();
+            if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+            startWatching();
+          }
+        });
+      }
+    }
   });
 
   // Для заездов: не давать экрану погаснуть / отпустить
