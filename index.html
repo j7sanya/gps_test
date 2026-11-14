@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=35 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=36 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=35">
+<link rel="stylesheet" href="css/style.css?v=36">
 </head>
 
 <body>
@@ -31,6 +31,9 @@
     <div id="runInfo"></div>
     <button id="runBtn">Отменить заезд</button>
   </div>
+
+  <!-- Знаки ближайших поворотов (js/signs.js): появляются под секундомером во время заезда -->
+  <div id="turnStrip"></div>
 
   <div id="panel">
     <div id="launchCard"></div>   <!-- подсказка «рядом старт» / подготовка старта с места (js/launch.js) -->
@@ -143,6 +146,7 @@
     <div class="dr-item" id="setMap"><i>🗺️</i><div><b>Карта</b><small>Стиль: тёмная, светлая, цветная…</small></div><em>›</em></div>
     <div class="dr-item" id="setSpeedo"><i>🏎️</i><div><b>Спидометр</b><small>Вид и акцентный цвет</small></div><em>›</em></div>
     <div class="dr-item" id="setHud"><i>🪟</i><div><b>Проекция</b><small>Отражение, макет, цвет цифр</small></div><em>›</em></div>
+    <div class="dr-item" id="setSigns"><i>🧭</i><div><b>Знаки поворотов</b><small>Как в ралли: следующий поворот, звук, расстояние</small></div><em>›</em></div>
     <div class="dr-item" id="setScreen"><i>🔆</i><div><b>Экран</b><small>Не гаснет, пока приложение открыто</small></div><em>›</em></div>
     <div class="dr-item" id="setLights"><i>🚦</i><div><b>Светофор</b><small>Стиль отсчёта, звук, вибрация</small></div><em>›</em></div>
   </div>
@@ -152,6 +156,7 @@
 <div id="hud">
   <div id="hudBox" class="fv l-speed">
     <div class="h-tag">ПРОЕКЦИЯ · ДВОЙНОЙ ТАП — ВЫХОД</div>
+    <div class="h-tn" id="hTn"></div>
     <div class="h-sp"><b id="hSp">0</b><small>КМ/Ч</small></div>
     <div class="h-tm"><b id="hTm">--:--.-</b><small id="hTmL">ждём заезд</small></div>
     <div class="h-dl"><b id="hDl"></b><small id="hDlL"></small></div>
@@ -164,6 +169,12 @@
   <div class="ov-head"><h2>🪟 Проекция</h2><button class="ov-close" id="hudSetClose">✕</button></div>
   <div id="hudSetBody"></div>
   <div id="hudFoot"><button id="hudGo" style="flex:1;background:var(--accent);color:#fff">▶ Включить проекцию</button></div>
+</div>
+
+<!-- Настройки знаков поворотов -->
+<div id="signsOverlay">
+  <div class="ov-head"><h2>🧭 Знаки поворотов</h2><button class="ov-close" id="signsClose">✕</button></div>
+  <div id="signsBody"></div>
 </div>
 
 <!-- Настройка экрана -->
@@ -292,26 +303,28 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=35"></script>   <!-- настройки -->
-<script src="js/utils.js?v=35"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=35"></script>      <!-- карта -->
-<script src="js/ui.js?v=35"></script>
-<script src="js/speedo.js?v=35"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=35"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=35"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=35"></script>     <!-- привязка к дорогам -->
-<script src="js/search.js?v=35"></script>   <!-- поиск трасс: карточки и фильтры -->
-<script src="js/track.js?v=35"></script>    <!-- карточка трассы: карта и рекорды -->
-<script src="js/routes.js?v=35"></script>   <!-- окно «Трассы» -->
-<script src="js/history.js?v=35"></script>   <!-- история заездов и тепловая карта -->
-<script src="js/launch.js?v=35"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=35"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/hud.js?v=35"></script>      <!-- проекция на стекло и настройка экрана -->
-<script src="js/menu.js?v=35"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=35"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=35"></script> <!-- конфетти при рекорде -->
-<script src="js/profile.js?v=35"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=35"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=35"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=36"></script>   <!-- настройки -->
+<script src="js/utils.js?v=36"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=36"></script>      <!-- карта -->
+<script src="js/ui.js?v=36"></script>
+<script src="js/speedo.js?v=36"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=36"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=36"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=36"></script>     <!-- привязка к дорогам -->
+<script src="js/search.js?v=36"></script>   <!-- поиск трасс: карточки и фильтры -->
+<script src="js/track.js?v=36"></script>    <!-- карточка трассы: карта и рекорды -->
+<script src="js/routes.js?v=36"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=36"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=36"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=36"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/hud.js?v=36"></script>      <!-- проекция на стекло и настройка экрана -->
+<script src="js/turns.js?v=36"></script>     <!-- повороты трассы и их сложность -->
+<script src="js/signs.js?v=36"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
+<script src="js/menu.js?v=36"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=36"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=36"></script> <!-- конфетти при рекорде -->
+<script src="js/profile.js?v=36"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=36"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=36"></script>      <!-- запуск и кнопки -->
 </body>
 </html>

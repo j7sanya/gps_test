@@ -82,6 +82,7 @@ STR.run = (function () {
       distance: route.distance || total,
       total,
       toXY,
+      turns: STR.turns ? STR.turns.detect(xy, cum) : [],   // повороты для знаков (js/turns.js)
       start: gate(xy[0], unit(p40[0] - xy[0][0], p40[1] - xy[0][1])),         // направление: как едем в начале трассы
       finish: gate(last, unit(last[0] - pEnd40[0], last[1] - pEnd40[1])),     // направление: как приезжаем в конце
       // Все места трассы в пределах maxDist метров от точки P (расстояние и положение s вдоль трассы),
@@ -123,7 +124,10 @@ STR.run = (function () {
     if (!run) return;
     const now = Date.now();
     $('runTime').textContent = U.fmtPrecise((now - run.t0) / 1000);
-    if (now - lastPanelT > 250) { lastPanelT = now; STR.ui.render(run.stats); }   // время в нижней панели идёт плавно
+    if (now - lastPanelT > 250) {
+      lastPanelT = now; STR.ui.render(run.stats);   // время в нижней панели идёт плавно
+      if (STR.signs) STR.signs.update();            // знаки поворотов: расстояние тоже идёт плавно
+    }
     rafId = requestAnimationFrame(tick);
   }
   function stopTick() {
@@ -145,7 +149,7 @@ STR.run = (function () {
     const g = pr.start, Q = pr.toXY(B);
     const along = Math.max(0, (Q[0] - g.c[0]) * g.d[0] + (Q[1] - g.c[1]) * g.d[1]);   // сколько уже отъехали от линии старта
     run = {
-      pr, t0, sm: sm === 'stand' ? 'stand' : 'roll', progress: 0, lost: false, invalid: false, reason: '', farSince: null, track: [],
+      pr, t0, sm: sm === 'stand' ? 'stand' : 'roll', progress: 0, progAt: Date.now(), lost: false, invalid: false, reason: '', farSince: null, track: [],
       stats: { startT: t0, stopT: null, distance: along, speedNow: filter.speed || 0, maxSpeed: 0, maxGap: 0, points: 0 }
     };
     mode = 'running';
@@ -154,6 +158,7 @@ STR.run = (function () {
     if (STR.hud) STR.hud.auto();                 // проекция включается сама (если так настроено)
     showBanner(pr.name);
     $('runTime').textContent = '00:00.00';
+    if (STR.signs) STR.signs.reset();            // знаки поворотов: новый заезд, сигналим заново
     STR.map.showRoute(pr.lines, false);          // трасса сразу появляется на карте
     if (STR.gps.holdScreen) STR.gps.holdScreen();  // экран не гаснет
     U.setStatus(`Заезд «${pr.name}» начался!`);
@@ -233,6 +238,7 @@ STR.run = (function () {
       }
     }
 
+    run.progAt = Date.now();   // момент, к которому относится run.progress (дальше путь достраивается по скорости)
     STR.map.follow(B);
     updateInfo();
   }
@@ -275,6 +281,7 @@ STR.run = (function () {
     lastDone = { time, name: pr.name, bad, isRecord, sm, prev: prev ? prev.time : null };
     stopTick();
     run = null;
+    if (STR.signs) { STR.signs.reset(); STR.signs.update(); }   // знаки поворотов убираем
     mode = 'done';
     STR.ui.setRunning(false);
     cooldownUntil = t1 + C.RUN_COOLDOWN_S * 1000;
@@ -298,6 +305,7 @@ STR.run = (function () {
   function cancel() {
     stopTick();
     run = null;
+    if (STR.signs) { STR.signs.reset(); STR.signs.update(); }
     mode = 'idle';
     if (!STR.gps.isRecording()) STR.ui.setRunning(false);
     hideBanner();
@@ -415,5 +423,23 @@ STR.run = (function () {
     return { mode: 'idle' };
   }
 
-  return { getLive, refresh, onFix, cancel, startStanding, arm, armed, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
+  // Ближайшие повороты для знаков: не дальше maxDist метров до начала, не больше count штук.
+  // Расстояние считаем вдоль трассы; между GPS-точками путь достраиваем по скорости (до 3 с), чтобы метры шли плавно.
+  // Если положение на трассе неточно (съехали, потеряли GPS) — знаки не показываем.
+  function getNextTurns(maxDist, count) {
+    if (!run || run.lost || run.uncertain || !run.pr.turns) return [];
+    const sp = Math.min(run.stats.speedNow || 0, 80);
+    const prog = run.progress + sp * Math.min(3, Math.max(0, Date.now() - (run.progAt || Date.now())) / 1000);
+    const out = [];
+    for (const t of run.pr.turns) {
+      if (t.s1 + 10 < prog) continue;           // этот поворот уже проехали
+      const d = t.s0 - prog;
+      if (d > maxDist) break;
+      out.push({ id: t.s0, level: t.level, dir: t.dir, angle: t.angle, dist: Math.max(0, d) });
+      if (out.length >= count) break;
+    }
+    return out;
+  }
+
+  return { getLive, getNextTurns, refresh, onFix, cancel, startStanding, arm, armed, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
 })();
