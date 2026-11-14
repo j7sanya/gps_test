@@ -132,6 +132,19 @@ STR.api = (function () {
     return me;
   }
 
+  // Сменить ник (3–16 символов). Ответ: { ok, nick } или { error: 'format' | 'reserved' | 'taken' | 'offline' | ... }
+  async function setNick(nick) {
+    const r = await callServer({ action: 'set_nick', nick });
+    if (r && r.ok) await loadMe();
+    return r || { error: 'network' };
+  }
+  // Сменить аватар: base64 JPEG или null (убрать). Ответ: { ok, url } или { error }
+  async function setAvatar(base64) {
+    const r = await callServer({ action: 'set_avatar', image: base64 || null });
+    if (r && r.ok) await loadMe();
+    return r || { error: 'network' };
+  }
+
   // Сохранить статус профиля (на телефоне всегда, на сервер — если есть подключение и ник)
   async function saveBio(text) {
     text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -217,6 +230,8 @@ STR.api = (function () {
     getMeError: () => meError,
     getBio() { return (me && me.bio) || readJSON(C.STORE_BIO, ''); },
     checkNick,
+    setNick,
+    setAvatar,
     sendRecord,
     serverOn,
 

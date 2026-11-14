@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=34 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=35 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=34">
+<link rel="stylesheet" href="css/style.css?v=35">
 </head>
 
 <body>
@@ -62,6 +62,17 @@
     </div>
   </div>
 </div>
+
+<!-- Аватар: выбрать фото или убрать -->
+<div id="avSheet">
+  <div class="sheet">
+    <h3>Аватар</h3>
+    <button id="avPick">📷 Выбрать фото<small>Из галереи или сделать снимок</small></button>
+    <button id="avRemove" class="alt">🗑 Убрать аватар<small>Вместо него будет первая буква ника</small></button>
+    <button class="cancel" id="avCancel">Отмена</button>
+  </div>
+</div>
+<input type="file" id="avFile" accept="image/*" hidden>
 
 <!-- Выбор: как создать трассу -->
 <div id="createSheet">
@@ -229,12 +240,13 @@
 <!-- Экран «сначала задайте ник» (если ника нет, он задаётся в боте) -->
 <div id="nickGate">
   <div class="dlg">
-    <h3>Нужен ник</h3>
-    <p>Чтобы попасть в таблицы рекордов, придумайте ник: это делается в чате с ботом.
-Напишите боту /start и следуйте подсказке, потом вернитесь сюда.</p>
+    <h3>Придумайте ник</h3>
+    <p>Ник нужен, чтобы попасть в таблицы рекордов. 3–16 символов: буквы, цифры, «_», «.» или «-», без пробелов. Позже его можно сменить в профиле.</p>
+    <input id="nickInput" type="text" maxlength="16" placeholder="Ваш ник" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <p id="nickErr" class="nick-err"></p>
     <div class="row">
       <button class="cancel" id="nickLater">Позже</button>
-      <button id="nickClose">Закрыть и открыть чат</button>
+      <button id="nickSave">Сохранить</button>
     </div>
   </div>
 </div>
@@ -280,26 +292,26 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=34"></script>   <!-- настройки -->
-<script src="js/utils.js?v=34"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=34"></script>      <!-- карта -->
-<script src="js/ui.js?v=34"></script>
-<script src="js/speedo.js?v=34"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=34"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=34"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=34"></script>     <!-- привязка к дорогам -->
-<script src="js/search.js?v=34"></script>   <!-- поиск трасс: карточки и фильтры -->
-<script src="js/track.js?v=34"></script>    <!-- карточка трассы: карта и рекорды -->
-<script src="js/routes.js?v=34"></script>   <!-- окно «Трассы» -->
-<script src="js/history.js?v=34"></script>   <!-- история заездов и тепловая карта -->
-<script src="js/launch.js?v=34"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=34"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/hud.js?v=34"></script>      <!-- проекция на стекло и настройка экрана -->
-<script src="js/menu.js?v=34"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=34"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=34"></script> <!-- конфетти при рекорде -->
-<script src="js/profile.js?v=34"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=34"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=34"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=35"></script>   <!-- настройки -->
+<script src="js/utils.js?v=35"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=35"></script>      <!-- карта -->
+<script src="js/ui.js?v=35"></script>
+<script src="js/speedo.js?v=35"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=35"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=35"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=35"></script>     <!-- привязка к дорогам -->
+<script src="js/search.js?v=35"></script>   <!-- поиск трасс: карточки и фильтры -->
+<script src="js/track.js?v=35"></script>    <!-- карточка трассы: карта и рекорды -->
+<script src="js/routes.js?v=35"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=35"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=35"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=35"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/hud.js?v=35"></script>      <!-- проекция на стекло и настройка экрана -->
+<script src="js/menu.js?v=35"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=35"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=35"></script> <!-- конфетти при рекорде -->
+<script src="js/profile.js?v=35"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=35"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=35"></script>      <!-- запуск и кнопки -->
 </body>
 </html>

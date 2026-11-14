@@ -14,6 +14,12 @@
     try { tg.disableVerticalSwipes(); } catch (e) {}   // чтобы свайп не закрывал приложение
   }
 
+  // iPhone с полоской жестов внизу: если Telegram не сообщает отступ, задаём его сами (iPhone X и новее — высота экрана от 812)
+  try {
+    if (/iPhone/.test(navigator.userAgent) && Math.max(screen.width, screen.height) >= 812)
+      document.documentElement.style.setProperty('--home-gap', '28px');
+  } catch (e) {}
+
   let session = 0;          // номер записи (чтобы запоздавший ответ от сервера не попал в новую запись)
   let lastRecording = null; // итоги последней записи (для кнопки «Сохранить как трассу»)
 
@@ -78,8 +84,17 @@
   });
 
   // Ника нет — подсказываем задать его в боте (только если подключён сервер и мы внутри Telegram)
-  $('nickLater').addEventListener('click', () => $('nickGate').classList.remove('open'));
-  $('nickClose').addEventListener('click', () => { try { tg.close(); } catch (e) { $('nickGate').classList.remove('open'); } });
+  const nickGate = $('nickGate');
+  $('nickLater').addEventListener('click', () => nickGate.classList.remove('open'));
+  $('nickSave').addEventListener('click', async () => {
+    const v = $('nickInput').value.trim(), err = $('nickErr');
+    if (!/^[A-Za-z0-9А-Яа-яЁё_.\-]{3,16}$/.test(v)) { err.textContent = 'Ник: 3–16 символов, буквы, цифры, «_», «.» или «-», без пробелов.'; return; }
+    err.textContent = ''; $('nickSave').textContent = '…';
+    const r = await STR.api.setNick(v);
+    $('nickSave').textContent = 'Сохранить';
+    if (r && r.ok) { nickGate.classList.remove('open'); U.setStatus('Ваш ник: ' + v + ' ✅'); return; }
+    err.textContent = { taken: 'Этот ник уже занят 😕 Придумайте другой.', reserved: 'Этот ник зарезервирован, придумайте другой.', format: 'Ник: 3–16 символов, без пробелов.' }[r && r.error] || 'Не получилось сохранить ник. Попробуйте позже.';
+  });
   STR.api.checkNick().then(r => { if (r === 'none') $('nickGate').classList.add('open'); });
 
   // Запуск: грузим официальные трассы и сразу определяем местоположение

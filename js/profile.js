@@ -22,7 +22,7 @@ STR.profile = (function () {
     $('profileOverlay').classList.add('open');
     hookBack();
     // подтягиваем профиль и таблицы с сервера, затем перерисовываем
-    Promise.all([STR.api.loadMe(), STR.api.loadBoard()]).then(() => { if (isOpen() && !viewing && !editing) render(); });
+    Promise.all([STR.api.loadMe(), STR.api.loadBoard()]).then(() => { if (isOpen() && !viewing && !editing && !editingNick) render(); });
   }
 
   // Профиль другого игрока (открывается по нику в «Рекордах»)
@@ -49,7 +49,9 @@ STR.profile = (function () {
     else { try { STR.tg.BackButton.hide(); } catch (e) {} }
   }
 
-  let editing = false;
+  let editing = false;       // редактируется статус
+  let editingNick = false;   // редактируется ник
+  let nickError = '';
 
   function render() {
     if (viewing) return renderOther();
@@ -61,19 +63,22 @@ STR.profile = (function () {
     const top = el('pf-top');
     const ava = el('pf-ava');
     const fallback = () => { ava.textContent = (nick || '?')[0].toUpperCase(); };
-    if (me && me.avatar_url) {                  // аватар, который вы выбрали в боте (/avatar)
+    if (me && me.avatar_url) {
       const img = document.createElement('img');
       img.src = me.avatar_url; img.alt = '';
       img.onerror = () => { img.remove(); fallback(); };
       ava.appendChild(img);
     } else fallback();                          // без аватара: первая буква ника
+    const wrap = el('pf-ava-wrap');             // нажатие на аватар: выбрать фото или убрать
+    wrap.append(ava, el('pf-ava-ed', '✎'));
+    wrap.onclick = () => { if (nick) openAvatarSheet(); else U.setStatus('Сначала задайте ник.'); };
 
     const info = el('pf-info');
-    info.appendChild(el('pf-nick', nick || 'Без ника'));
+    info.appendChild(nickRow(nick));
     info.appendChild(el('pf-id', me && me.num ? 'ID: ' + me.num : (nick ? 'ID: —' : 'Профиль не загружен')));
     info.appendChild(bioRow());
     if (!nick && STR.api.getMeError()) info.appendChild(el('pf-id', 'Причина: ' + STR.api.getMeError()));
-    top.append(ava, info);
+    top.append(wrap, info);
     box.appendChild(top);
 
     // ----- Три плитки -----
@@ -164,6 +169,84 @@ STR.profile = (function () {
     box.appendChild(card);
     box.appendChild(el('pf-free'));
   }
+
+  // ----- Ник: показ и правка на месте -----
+  const NICK_RE = /^[A-Za-z0-9А-Яа-яЁё_.\-]{3,16}$/;
+  const NICK_ERR = {
+    format: 'Ник: 3–16 символов, буквы, цифры, «_», «.» или «-», без пробелов.',
+    reserved: 'Этот ник зарезервирован, придумайте другой.',
+    taken: 'Этот ник уже занят 😕 Придумайте другой.',
+    offline: 'Менять ник можно только внутри Telegram и при подключённом сервере.',
+    auth: 'Не удалось подтвердить Telegram. Закройте и откройте приложение заново.',
+    network: 'Нет связи с сервером. Попробуйте позже.'
+  };
+  function nickRow(nick) {
+    const wrap = el('pf-nickrow-w');
+    const row = el('pf-nickrow');
+    if (editingNick) {
+      const input = document.createElement('input');
+      input.maxLength = 16; input.value = nick || ''; input.placeholder = 'Новый ник';
+      input.autocapitalize = 'off'; input.spellcheck = false;
+      const ok = el('ok', '✓', 'button'), no = el('', '✕', 'button');
+      let busy = false;
+      const done = async save => {
+        if (busy) return;
+        const v = input.value.trim();
+        if (!save || v === (nick || '')) { editingNick = false; nickError = ''; return isOpen() && render(); }
+        if (!NICK_RE.test(v)) { nickError = NICK_ERR.format; return render(); }
+        busy = true; ok.textContent = '…';
+        const r = await STR.api.setNick(v);
+        busy = false;
+        if (r && r.ok) { editingNick = false; nickError = ''; U.setStatus('Ник изменён: ' + v); }
+        else nickError = NICK_ERR[r && r.error] || 'Не удалось сменить ник. Попробуйте позже.';
+        if (isOpen()) render();
+      };
+      ok.onclick = () => done(true); no.onclick = () => done(false);
+      input.onkeydown = e => { if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); };
+      row.append(input, ok, no);
+      setTimeout(() => input.focus(), 0);
+    } else {
+      row.appendChild(el('pf-nick', nick || 'Без ника'));
+      const pen = el('', '✎', 'button'); pen.title = 'Изменить ник';
+      pen.onclick = () => { editingNick = true; nickError = ''; render(); };
+      row.appendChild(pen);
+    }
+    wrap.appendChild(row);
+    if (nickError) wrap.appendChild(el('pf-err', nickError));
+    return wrap;
+  }
+
+  // ----- Аватар: выбор фото (сжимаем до 320×320 JPEG прямо на телефоне) -----
+  const avSheet = () => $('avSheet');
+  function openAvatarSheet() { avSheet().classList.add('open'); }
+  function closeAvatarSheet() { avSheet().classList.remove('open'); }
+  async function toJpeg(file) {
+    let bmp;
+    try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) {
+      bmp = await new Promise((res, rej) => { const i = new Image(), u = URL.createObjectURL(file); i.onload = () => res(i); i.onerror = rej; i.src = u; });
+    }
+    const w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight, side = Math.min(w, h), S = 320;
+    const c = document.createElement('canvas'); c.width = c.height = S;
+    c.getContext('2d').drawImage(bmp, (w - side) / 2, (h - side) / 2, side, side, 0, 0, S, S);   // квадрат по центру
+    return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+  }
+  const AV_ERR = { offline: 'Менять аватар можно только внутри Telegram и при подключённом сервере.', nick: 'Сначала задайте ник.', size: 'Фото слишком большое.', image: 'Не получилось обработать фото.', network: 'Нет связи с сервером.' };
+  async function applyAvatar(b64) {
+    U.setStatus(b64 ? 'Загружаю аватар…' : 'Убираю аватар…');
+    const r = await STR.api.setAvatar(b64);
+    U.setStatus(r && r.ok ? (b64 ? 'Аватар обновлён ✅' : 'Аватар убран') : (AV_ERR[r && r.error] || 'Не получилось сохранить аватар, попробуйте позже.'));
+    if (isOpen() && !viewing) render();
+  }
+  $('avPick').addEventListener('click', () => { closeAvatarSheet(); $('avFile').value = ''; $('avFile').click(); });
+  $('avRemove').addEventListener('click', () => { closeAvatarSheet(); applyAvatar(null); });
+  $('avCancel').addEventListener('click', closeAvatarSheet);
+  avSheet().addEventListener('click', e => { if (e.target === avSheet()) closeAvatarSheet(); });
+  $('avFile').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try { await applyAvatar(await toJpeg(f)); } catch (err) { U.setStatus(AV_ERR.image); }
+  });
 
   // Строка статуса с карандашом (редактирование на месте)
   function bioRow() {
