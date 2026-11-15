@@ -136,8 +136,10 @@ STR.map = (function () {
       accFill.set(fc([circlePoly(p.lat, p.lon, p.acc || 0)]));
       if (first) { map.jumpTo({ center: [p.lon, p.lat], zoom: 16 }); first = false; }
     },
-    follow(p) { map.easeTo({ center: [p.lon, p.lat], duration: 500 }); },
-    goTo(p) { map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 16), duration: 600 }); },
+    // Во время заезда секундомер и знаки закрывают верх карты: сдвигаем центр камеры вниз, чтобы машина стояла под ними
+    pad() { let t = 0; try { t = (STR.run && STR.run.hudTopPad && STR.run.hudTopPad()) || 0; } catch (e) {} return { top: t, bottom: 0, left: 0, right: 0 }; },
+    follow(p) { map.easeTo({ center: [p.lon, p.lat], padding: this.pad(), duration: 500 }); },
+    goTo(p) { map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 16), padding: this.pad(), duration: 600 }); },
 
     // Красная линия записываемого трека. Каждая часть (segs) — отдельная линия, без соединений.
     drawTrack(segs) { rawLine.set(fc(segs.filter(s => s.length > 1).map(s => line(s.map(p => [p.lon, p.lat]))))); },

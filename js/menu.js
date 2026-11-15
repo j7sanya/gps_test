@@ -43,7 +43,7 @@ STR.menu = (function () {
     else if (where === 'profile') STR.profile.open();
     else if (where === 'settings') STR.settings.open();
     else if (where === 'history') STR.history.open();
-    else if (where === 'hud') STR.hud.open();
+    else if (where === 'hud') STR.hud.openSettings();   // проекция: настройки и кнопка «Включить» в одном окне
   }
 
   $('menuBtn').addEventListener('click', open);

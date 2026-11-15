@@ -14,6 +14,19 @@
     try { tg.disableVerticalSwipes(); } catch (e) {}   // чтобы свайп не закрывал приложение
   }
 
+  // Масштаб интерфейса заезда под размер экрана: 1 — iPhone 13 в Telegram (390×~735), на iPhone 8/SE меньше, на больших чуть крупнее.
+  // Считается по высоте и ширине доступной области (в Telegram высота меньше экрана на шапку приложения).
+  function applyScale() {
+    let k = Math.min(innerHeight / 740, innerWidth / 390);
+    k = Math.round(Math.max(0.68, Math.min(1.12, k)) * 50) / 50;
+    document.documentElement.style.setProperty('--k', String(k));
+    STR.scale = k;
+  }
+  applyScale();
+  window.addEventListener('resize', applyScale);
+  window.addEventListener('orientationchange', applyScale);
+  try { if (tg) tg.onEvent('viewportChanged', applyScale); } catch (e) {}
+
   // iPhone с полоской жестов внизу: если Telegram не сообщает отступ, задаём его сами (iPhone X и новее — высота экрана от 812)
   try {
     if (/iPhone/.test(navigator.userAgent) && Math.max(screen.width, screen.height) >= 812)

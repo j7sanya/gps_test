@@ -163,7 +163,7 @@ STR.gps = (function () {
   // Не даём экрану погаснуть во время записи
   const KEY_SCREEN = 'strace_screen_v1';
   let screenMode = 'app';   // 'app' — пока приложение открыто, 'run' — только во время заезда и записи
-  try { const m = localStorage.getItem(KEY_SCREEN); if (m === 'app' || m === 'run') screenMode = m; } catch (e) {}
+  try { const m = localStorage.getItem(KEY_SCREEN); if (m === 'app') screenMode = m; /* «только во время заезда» убрали: экран не гаснет, пока приложение открыто */ } catch (e) {}
   let hudOn = false;        // включена проекция: экран всегда держим включённым
   const wantAwake = () => screenMode === 'app' || hudOn || rec || !!(STR.run && STR.run.isActive());
   async function keepScreenOn() {

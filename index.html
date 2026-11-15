@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=36 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=38 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=36">
+<link rel="stylesheet" href="css/style.css?v=38">
 </head>
 
 <body>
@@ -90,7 +90,7 @@
 <!-- Окно со списком трасс -->
 <div id="routesOverlay">
   <div class="ov-head">
-    <h2>🏁 Трассы</h2>
+    <h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg>Трассы</h2>
     <div class="ov-acts"><button class="ov-plus" id="routesNew" aria-label="Создать трассу">+</button><button class="ov-close" id="routesClose">✕</button></div>
   </div>
   <div id="rsTop">
@@ -104,14 +104,14 @@
 
 <!-- Фильтры трасс -->
 <div id="rfOverlay">
-  <div class="ov-head"><h2>⚙ Фильтры</h2><button class="ov-close" id="rfClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg>Фильтры</h2><button class="ov-close" id="rfClose">✕</button></div>
   <div id="rfBody"></div>
   <div id="rfFoot"><button id="rfReset">Сбросить</button><button id="rfShow">Показать</button></div>
 </div>
 
 <!-- История заездов (последние 20 + закреплённые) -->
 <div id="historyOverlay">
-  <div class="ov-head"><h2>🕘 История заездов</h2><button class="ov-close" id="historyClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg>История заездов</h2><button class="ov-close" id="historyClose">✕</button></div>
   <div id="hiTop">
     <div id="hiChips"><span class="chip on" data-f="all">Все</span><span class="chip" data-f="pin">⭐ Закреплённые</span><span class="chip" data-f="rec">🏆 Рекорды</span></div>
     <select id="hiRoute"><option value="">Все трассы</option></select>
@@ -141,14 +141,12 @@
 
 <!-- Настройки (главная): спидометр и светофор -->
 <div id="settingsOverlay">
-  <div class="ov-head"><h2>⚙️ Настройки</h2><button class="ov-close" id="settingsClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/><path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/></svg>Настройки</h2><button class="ov-close" id="settingsClose">✕</button></div>
   <div id="settingsBody">
-    <div class="dr-item" id="setMap"><i>🗺️</i><div><b>Карта</b><small>Стиль: тёмная, светлая, цветная…</small></div><em>›</em></div>
-    <div class="dr-item" id="setSpeedo"><i>🏎️</i><div><b>Спидометр</b><small>Вид и акцентный цвет</small></div><em>›</em></div>
-    <div class="dr-item" id="setHud"><i>🪟</i><div><b>Проекция</b><small>Отражение, макет, цвет цифр</small></div><em>›</em></div>
-    <div class="dr-item" id="setSigns"><i>🧭</i><div><b>Знаки поворотов</b><small>Как в ралли: следующий поворот, звук, расстояние</small></div><em>›</em></div>
-    <div class="dr-item" id="setScreen"><i>🔆</i><div><b>Экран</b><small>Не гаснет, пока приложение открыто</small></div><em>›</em></div>
-    <div class="dr-item" id="setLights"><i>🚦</i><div><b>Светофор</b><small>Стиль отсчёта, звук, вибрация</small></div><em>›</em></div>
+    <div class="dr-item" id="setMap"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/></svg></i><div><b>Карта</b><small>Стиль</small></div><em>›</em></div>
+    <div class="dr-item" id="setSpeedo"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 17a8 8 0 1 1 15 0"/><path d="M12 17l3.5-4.5"/><path d="M4.5 17h2"/><path d="M17.5 17h2"/></svg></i><div><b>Спидометр</b><small>Вид</small></div><em>›</em></div>
+    <div class="dr-item" id="setSigns"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z"/><path d="M10 16v-3.5a1.5 1.5 0 0 1 1.5-1.5H15"/><path d="M13.2 9l2.3 2-2.3 2"/></svg></i><div><b>Знаки поворотов</b><small>Расстояние, звук</small></div><em>›</em></div>
+    <div class="dr-item" id="setLights"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="8" height="19" rx="3"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg></i><div><b>Светофор</b><small>Стиль, звук</small></div><em>›</em></div>
   </div>
 </div>
 
@@ -166,26 +164,21 @@
 
 <!-- Настройки проекции -->
 <div id="hudSetOverlay">
-  <div class="ov-head"><h2>🪟 Проекция</h2><button class="ov-close" id="hudSetClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l3.5-12h11L21 19z"/><path d="M8.5 15.5a3.5 3.5 0 0 1 7 0"/><path d="M12 15.5l1.6-2.4"/></svg>Проекция</h2><button class="ov-close" id="hudSetClose">✕</button></div>
   <div id="hudSetBody"></div>
   <div id="hudFoot"><button id="hudGo" style="flex:1;background:var(--accent);color:#fff">▶ Включить проекцию</button></div>
 </div>
 
 <!-- Настройки знаков поворотов -->
 <div id="signsOverlay">
-  <div class="ov-head"><h2>🧭 Знаки поворотов</h2><button class="ov-close" id="signsClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z"/><path d="M10 16v-3.5a1.5 1.5 0 0 1 1.5-1.5H15"/><path d="M13.2 9l2.3 2-2.3 2"/></svg>Знаки поворотов</h2><button class="ov-close" id="signsClose">✕</button></div>
   <div id="signsBody"></div>
 </div>
 
 <!-- Настройка экрана -->
-<div id="screenOverlay">
-  <div class="ov-head"><h2>🔆 Экран</h2><button class="ov-close" id="screenClose">✕</button></div>
-  <div id="screenBody"></div>
-</div>
-
 <!-- Настройки светофора (старт с места) -->
 <div id="lightsOverlay">
-  <div class="ov-head"><h2>🚦 Светофор</h2><button class="ov-close" id="lightsClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="8" height="19" rx="3"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>Светофор</h2><button class="ov-close" id="lightsClose">✕</button></div>
   <div id="lightsBody">
     <button class="lg-demo" id="lgDemo">▶ Показать отсчёт</button>
     <div class="sp-sec">Стиль отсчёта</div>
@@ -197,13 +190,13 @@
 
 <!-- Стиль карты -->
 <div id="mapOverlay">
-  <div class="ov-head"><h2>🗺️ Карта</h2><button class="ov-close" id="mapClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/></svg>Карта</h2><button class="ov-close" id="mapClose">✕</button></div>
   <div id="mapBody"><div class="sp-sec">Стиль карты</div><div id="mapStyles"></div></div>
 </div>
 
 <!-- Трассы рядом: выбор трассы для старта с места -->
 <div id="nearOverlay">
-  <div class="ov-head"><h2>📍 Трассы рядом</h2><button class="ov-close" id="nearClose">✕</button></div>
+  <div class="ov-head"><h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>Трассы рядом</h2><button class="ov-close" id="nearClose">✕</button></div>
   <div id="nearBody">
     <input id="nearSearch" type="search" placeholder="🔍 Найти трассу по названию…" autocomplete="off">
     <div id="nearHint"></div>
@@ -221,7 +214,7 @@
 <!-- Настройки спидометра: вид и акцентный цвет -->
 <div id="speedoOverlay">
   <div class="ov-head">
-    <h2>⚙️ Спидометр</h2>
+    <h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 17a8 8 0 1 1 15 0"/><path d="M12 17l3.5-4.5"/><path d="M4.5 17h2"/><path d="M17.5 17h2"/></svg>Спидометр</h2>
     <button class="ov-close" id="speedoClose">✕</button>
   </div>
   <div id="speedoBody">
@@ -240,10 +233,10 @@
       <div class="dr-ava" id="drAva"></div>
       <div class="dr-who"><b id="drNick">Профиль</b><small id="drId"></small></div>
     </div>
-    <div class="dr-item" data-go="routes"><i>🏁</i><div><b>Трассы</b><small>Поиск, рекорды, рядом, создание</small></div><em>›</em></div>
-    <div class="dr-item" data-go="history"><i>🕘</i><div><b>История заездов</b><small>Карта скорости заездов</small></div><em>›</em></div>
-    <div class="dr-item" data-go="hud"><i>🪟</i><div><b>Проекция</b><small>Скорость на лобовом стекле</small></div><em>›</em></div>
-    <div class="dr-item" data-go="settings"><i>⚙️</i><div><b>Настройки</b><small>Спидометр, светофор, проекция, экран</small></div><em>›</em></div>
+    <div class="dr-item" data-go="routes"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg></i><div><b>Трассы</b></div><em>›</em></div>
+    <div class="dr-item" data-go="history"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg></i><div><b>История заездов</b></div><em>›</em></div>
+    <div class="dr-item" data-go="hud"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l3.5-12h11L21 19z"/><path d="M8.5 15.5a3.5 3.5 0 0 1 7 0"/><path d="M12 15.5l1.6-2.4"/></svg></i><div><b>Проекция</b></div><em>›</em></div>
+    <div class="dr-item" data-go="settings"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/><path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/></svg></i><div><b>Настройки</b></div><em>›</em></div>
     <div class="dr-ver" id="drVer"></div>
   </aside>
 </div>
@@ -265,7 +258,7 @@
 <!-- Окно «Профиль» -->
 <div id="profileOverlay">
   <div class="ov-head">
-    <h2>👤 Профиль</h2>
+    <h2><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>Профиль</h2>
     <button class="ov-close" id="profileClose">✕</button>
   </div>
   <div id="profileBody"></div>
@@ -303,28 +296,28 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=36"></script>   <!-- настройки -->
-<script src="js/utils.js?v=36"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=36"></script>      <!-- карта -->
-<script src="js/ui.js?v=36"></script>
-<script src="js/speedo.js?v=36"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=36"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=36"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=36"></script>     <!-- привязка к дорогам -->
-<script src="js/search.js?v=36"></script>   <!-- поиск трасс: карточки и фильтры -->
-<script src="js/track.js?v=36"></script>    <!-- карточка трассы: карта и рекорды -->
-<script src="js/routes.js?v=36"></script>   <!-- окно «Трассы» -->
-<script src="js/history.js?v=36"></script>   <!-- история заездов и тепловая карта -->
-<script src="js/launch.js?v=36"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=36"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/hud.js?v=36"></script>      <!-- проекция на стекло и настройка экрана -->
-<script src="js/turns.js?v=36"></script>     <!-- повороты трассы и их сложность -->
-<script src="js/signs.js?v=36"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
-<script src="js/menu.js?v=36"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=36"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=36"></script> <!-- конфетти при рекорде -->
-<script src="js/profile.js?v=36"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=36"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=36"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=38"></script>   <!-- настройки -->
+<script src="js/utils.js?v=38"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=38"></script>      <!-- карта -->
+<script src="js/ui.js?v=38"></script>
+<script src="js/speedo.js?v=38"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=38"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=38"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=38"></script>     <!-- привязка к дорогам -->
+<script src="js/search.js?v=38"></script>   <!-- поиск трасс: карточки и фильтры -->
+<script src="js/track.js?v=38"></script>    <!-- карточка трассы: карта и рекорды -->
+<script src="js/routes.js?v=38"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=38"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=38"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=38"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/hud.js?v=38"></script>      <!-- проекция на стекло и настройка экрана -->
+<script src="js/turns.js?v=38"></script>     <!-- повороты трассы и их сложность -->
+<script src="js/signs.js?v=38"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
+<script src="js/menu.js?v=38"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=38"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=38"></script> <!-- конфетти при рекорде -->
+<script src="js/profile.js?v=38"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=38"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=38"></script>      <!-- запуск и кнопки -->
 </body>
 </html>

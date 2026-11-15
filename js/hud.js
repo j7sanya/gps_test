@@ -108,18 +108,5 @@ STR.hud = (function () {
   $('hudSetClose').addEventListener('click', closeSettings);
   $('hudGo').addEventListener('click', open);
 
-  // ---------- Настройка «Экран» ----------
-  const OPTS = [['app', 'Пока приложение открыто', 'Экран не гаснет всё время, пока вы в приложении. Так GPS-сигнал не теряется, ничего включать не нужно. Больше расходует батарею.'],
-                ['run', 'Только во время заезда', 'Экран не гаснет только при заезде, записи трассы и в режиме проекции. В остальное время гаснет как обычно.']];
-  function renderScreen() {
-    const m = STR.gps.getScreenMode();
-    $('screenBody').innerHTML = '<h4>Когда экран не должен гаснуть</h4>' + OPTS.map(([k, t, d]) => `<label class="tgl-row" data-m="${k}"><div><b>${t}</b><small>${d}</small></div><input type="radio" name="scm" ${m === k ? 'checked' : ''}><i></i></label>`).join('') +
-      '<div class="hud-note">Если на вашем телефоне экран всё равно гаснет, увеличьте время автоблокировки в настройках телефона (Экран → Автоблокировка).</div>';
-  }
-  $('screenBody').addEventListener('click', e => { const r = e.target.closest('[data-m]'); if (!r) return; e.preventDefault(); STR.gps.setScreenMode(r.dataset.m); renderScreen(); });
-  function openScreen() { renderScreen(); $('screenOverlay').classList.add('open'); bb(true, closeScreen); }
-  function closeScreen() { $('screenOverlay').classList.remove('open'); bb(false, closeScreen); if (STR.settings) STR.settings.resume(); }
-  $('screenClose').addEventListener('click', closeScreen);
-
-  return { open, close, auto, isOpen, openSettings, openScreen, cfg: () => Object.assign({}, cfg) };
+  return { open, close, auto, isOpen, openSettings, cfg: () => Object.assign({}, cfg) };
 })();

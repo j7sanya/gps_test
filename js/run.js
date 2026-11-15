@@ -441,5 +441,18 @@ STR.run = (function () {
     return out;
   }
 
-  return { getLive, getNextTurns, refresh, onFix, cancel, startStanding, arm, armed, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
+  // Сколько пикселей сверху карты закрыто секундомером и знаками поворотов (для сдвига камеры, чтобы машина не пряталась под ними).
+  // Пока идёт заезд, значение постоянное: карта не прыгает, когда знак появляется и исчезает.
+  function hudTopPad() {
+    if (mode !== 'running') return 0;
+    const b = $('runBanner'), mp = $('map');
+    if (!b || !mp) return 0;
+    const k = STR.scale || 1;
+    const signs = STR.signs && STR.signs.cfg().on;
+    const bottom = b.getBoundingClientRect().bottom - mp.getBoundingClientRect().top;
+    const pad = bottom + (signs ? 10 + Math.max(60, 84 * k) + Math.max(20, 28 * k) + 6 : 0);   // знак + метры под ним
+    return Math.round(Math.min(pad, mp.clientHeight * 0.62));   // но не больше 62% карты
+  }
+
+  return { getLive, getNextTurns, hudTopPad, refresh, onFix, cancel, startStanding, arm, armed, getPrepared, isActive: () => mode === 'running', isDone: () => mode === 'done' };
 })();
