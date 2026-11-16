@@ -36,6 +36,15 @@ STR.menu = (function () {
     try { STR.tg.BackButton.offClick(close); STR.tg.BackButton.hide(); } catch (e) {}
   }
 
+  // «Поддержка»: открываем бота поддержки. В ссылку кладём версию и платформу, чтобы вы видели их в обращении
+  function openSupport() {
+    const bot = (C.SUPPORT_BOT || '').replace(/^@/, '');
+    if (!bot) { U.setStatus('Поддержка скоро появится'); return; }
+    const plat = String((STR.tg && STR.tg.platform) || '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 12);
+    const url = 'https://t.me/' + bot + '?start=app_v' + C.VERSION + (plat ? '_' + plat : '');
+    try { STR.tg.openTelegramLink(url); } catch (e) { window.open(url, '_blank'); }
+  }
+
   // Пункт меню: закрываем шторку и открываем нужное окно
   function go(where) {
     close();
@@ -44,6 +53,7 @@ STR.menu = (function () {
     else if (where === 'settings') STR.settings.open();
     else if (where === 'history') STR.history.open();
     else if (where === 'help') STR.welcome.open();
+    else if (where === 'support') openSupport();
     else if (where === 'hud') STR.hud.openSettings();   // проекция: настройки и кнопка «Включить» в одном окне
   }
 

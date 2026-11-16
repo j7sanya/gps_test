@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=39 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=40 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=39">
+<link rel="stylesheet" href="css/style.css?v=40">
 </head>
 
 <body>
@@ -238,6 +238,7 @@
     <div class="dr-item" data-go="hud"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l3.5-12h11L21 19z"/><path d="M8.5 15.5a3.5 3.5 0 0 1 7 0"/><path d="M12 15.5l1.6-2.4"/></svg></i><div><b>Проекция</b></div><em>›</em></div>
     <div class="dr-item" data-go="settings"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/><path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/></svg></i><div><b>Настройки</b></div><em>›</em></div>
     <div class="dr-item" data-go="help"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8"/><path d="M12 17h.01"/></svg></i><div><b>Как это работает</b></div><em>›</em></div>
+    <div class="dr-item" data-go="support"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M19 19c0 1.7-1.8 2.5-4 2.5h-1.5"/></svg></i><div><b>Поддержка</b></div><em>›</em></div>
     <div class="dr-ver" id="drVer"></div>
   </aside>
 </div>
@@ -353,29 +354,29 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=39"></script>   <!-- настройки -->
-<script src="js/utils.js?v=39"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=39"></script>      <!-- карта -->
-<script src="js/ui.js?v=39"></script>
-<script src="js/speedo.js?v=39"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=39"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=39"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=39"></script>     <!-- привязка к дорогам -->
-<script src="js/search.js?v=39"></script>   <!-- поиск трасс: карточки и фильтры -->
-<script src="js/track.js?v=39"></script>    <!-- карточка трассы: карта и рекорды -->
-<script src="js/routes.js?v=39"></script>   <!-- окно «Трассы» -->
-<script src="js/history.js?v=39"></script>   <!-- история заездов и тепловая карта -->
-<script src="js/launch.js?v=39"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=39"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/hud.js?v=39"></script>      <!-- проекция на стекло и настройка экрана -->
-<script src="js/turns.js?v=39"></script>     <!-- повороты трассы и их сложность -->
-<script src="js/signs.js?v=39"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
-<script src="js/welcome.js?v=39"></script>  <!-- приветствие (5 карточек) -->
-<script src="js/menu.js?v=39"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=39"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=39"></script> <!-- конфетти при рекорде -->
-<script src="js/profile.js?v=39"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=39"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=39"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=40"></script>   <!-- настройки -->
+<script src="js/utils.js?v=40"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=40"></script>      <!-- карта -->
+<script src="js/ui.js?v=40"></script>
+<script src="js/speedo.js?v=40"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=40"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=40"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=40"></script>     <!-- привязка к дорогам -->
+<script src="js/search.js?v=40"></script>   <!-- поиск трасс: карточки и фильтры -->
+<script src="js/track.js?v=40"></script>    <!-- карточка трассы: карта и рекорды -->
+<script src="js/routes.js?v=40"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=40"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=40"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=40"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/hud.js?v=40"></script>      <!-- проекция на стекло и настройка экрана -->
+<script src="js/turns.js?v=40"></script>     <!-- повороты трассы и их сложность -->
+<script src="js/signs.js?v=40"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
+<script src="js/welcome.js?v=40"></script>  <!-- приветствие (5 карточек) -->
+<script src="js/menu.js?v=40"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=40"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=40"></script> <!-- конфетти при рекорде -->
+<script src="js/profile.js?v=40"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=40"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=40"></script>      <!-- запуск и кнопки -->
 </body>
 </html>
