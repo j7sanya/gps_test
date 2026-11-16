@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=38 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=39 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=38">
+<link rel="stylesheet" href="css/style.css?v=39">
 </head>
 
 <body>
@@ -237,8 +237,65 @@
     <div class="dr-item" data-go="history"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg></i><div><b>История заездов</b></div><em>›</em></div>
     <div class="dr-item" data-go="hud"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l3.5-12h11L21 19z"/><path d="M8.5 15.5a3.5 3.5 0 0 1 7 0"/><path d="M12 15.5l1.6-2.4"/></svg></i><div><b>Проекция</b></div><em>›</em></div>
     <div class="dr-item" data-go="settings"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/><path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/></svg></i><div><b>Настройки</b></div><em>›</em></div>
+    <div class="dr-item" data-go="help"><i><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8"/><path d="M12 17h.01"/></svg></i><div><b>Как это работает</b></div><em>›</em></div>
     <div class="dr-ver" id="drVer"></div>
   </aside>
+</div>
+
+<!-- Приветствие: 5 карточек, последняя — дисклеймер (см. js/welcome.js) -->
+<div id="welcome">
+  <button id="wClose" class="w-x" aria-label="Закрыть">✕</button>
+  <div class="w-card">
+    <div class="w-scene">
+      <div class="w-sc on" id="wsc0">
+        <svg viewBox="0 0 340 190" role="img" aria-label="Машина едет по трассе, секундомер идёт">
+          <path d="M30 150 L120 150 Q150 150 160 120 L185 70 Q195 48 225 48 L310 48" fill="none" stroke="#22d36b" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="30" cy="150" r="7" fill="#fff" stroke="#ff2d3d" stroke-width="3"/>
+          <circle cx="310" cy="48" r="7" fill="#ff2d3d" stroke="#fff" stroke-width="3"/>
+          <circle r="7" fill="#19c8ff" stroke="#fff" stroke-width="3"><animateMotion dur="5s" repeatCount="indefinite" path="M30 150 L120 150 Q150 150 160 120 L185 70 Q195 48 225 48 L310 48"/></circle>
+          <text x="30" y="176" fill="#8f98a7" font-size="12" text-anchor="middle">старт</text>
+          <text x="310" y="74" fill="#8f98a7" font-size="12" text-anchor="middle">финиш</text>
+        </svg>
+        <div class="w-tm" id="wTm">00:00.00</div>
+      </div>
+      <div class="w-sc" id="wsc1">
+        <svg viewBox="0 0 340 190" role="img" aria-label="Точки на карте соединяются в трассу">
+          <line class="w-ln" x1="50" y1="140" x2="120" y2="90" stroke="#22d36b" stroke-width="4" stroke-linecap="round" style="animation-delay:.6s"/>
+          <line class="w-ln" x1="120" y1="90" x2="200" y2="105" stroke="#22d36b" stroke-width="4" stroke-linecap="round" style="animation-delay:1.3s"/>
+          <line class="w-ln" x1="200" y1="105" x2="280" y2="50" stroke="#22d36b" stroke-width="4" stroke-linecap="round" style="animation-delay:2s"/>
+          <circle class="w-pt" cx="50" cy="140" r="7" fill="#fff" stroke="#ff2d3d" stroke-width="3" style="transform-origin:50px 140px"/>
+          <circle class="w-pt" cx="120" cy="90" r="6" fill="#fff" stroke="#0b0d10" stroke-width="2" style="animation-delay:.6s;transform-origin:120px 90px"/>
+          <circle class="w-pt" cx="200" cy="105" r="6" fill="#fff" stroke="#0b0d10" stroke-width="2" style="animation-delay:1.3s;transform-origin:200px 105px"/>
+          <circle class="w-pt" cx="280" cy="50" r="7" fill="#ff2d3d" stroke="#fff" stroke-width="3" style="animation-delay:2s;transform-origin:280px 50px"/>
+        </svg>
+        <div class="w-chips"><span class="chip on">Нарисовать на карте</span><span class="chip">Записать заездом</span></div>
+        <div class="w-plus">+</div>
+      </div>
+      <div class="w-sc" id="wsc2">
+        <svg viewBox="0 0 340 120" role="img" aria-label="Машина едет в полосе в 50 метров вокруг линии трассы">
+          <path d="M20 90 L110 90 Q140 90 150 66 L170 30 Q180 22 205 22 L320 22" fill="none" stroke="#22d36b" stroke-opacity=".18" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 90 L110 90 Q140 90 150 66 L170 30 Q180 22 205 22 L320 22" fill="none" stroke="#22d36b" stroke-width="4" stroke-linecap="round"/>
+          <circle r="6" fill="#19c8ff" stroke="#fff" stroke-width="3"><animateMotion dur="5s" repeatCount="indefinite" path="M20 96 L110 100 Q145 100 158 72 L176 42 Q184 30 205 30 L320 30"/></circle>
+          <text x="60" y="116" fill="#8f98a7" font-size="12">в пределах 50 м от линии</text>
+        </svg>
+        <div class="w-lb"><div><em>1 · Игрок А</em><span>03:12.48</span></div><div><em>2 · Игрок Б</em><span>03:15.91</span></div><div class="me"><em>3 · Вы</em><span>03:21.07</span></div></div>
+      </div>
+      <div class="w-sc" id="wsc3">
+        <div class="w-tiles">
+          <div class="wtile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z"/><path d="M10 16v-3.5a1.5 1.5 0 0 1 1.5-1.5H15"/><path d="M13.2 9l2.3 2-2.3 2"/></svg></i><b>Знаки поворотов</b><small>Настройки</small></div>
+          <div class="wtile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l3.5-12h11L21 19z"/><path d="M8.5 15.5a3.5 3.5 0 0 1 7 0"/><path d="M12 15.5l1.6-2.4"/></svg></i><b>Проекция</b><small>Меню</small></div>
+          <div class="wtile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 17a8 8 0 1 1 15 0"/><path d="M12 17l3.5-4.5"/><path d="M4.5 17h2"/><path d="M17.5 17h2"/></svg></i><b>Спидометр</b><small>Настройки</small></div>
+          <div class="wtile"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg></i><b>История заездов</b><small>Меню</small></div>
+        </div>
+      </div>
+      <div class="w-sc" id="wsc4"><div class="w-shield"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z"/><path d="M8.7 12.2l2.4 2.4 4.4-4.6"/></svg></div></div>
+    </div>
+    <h2 class="w-title" id="wTitle"></h2>
+    <div class="w-text" id="wText"></div>
+    <div class="w-dots" id="wDots"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="w-btns"><button id="wBack">Назад</button><button id="wNext" class="pr">Далее</button></div>
+    <span class="w-skip" id="wSkip">Пропустить</span>
+  </div>
 </div>
 
 <!-- Экран «сначала задайте ник» (если ника нет, он задаётся в боте) -->
@@ -296,28 +353,29 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=38"></script>   <!-- настройки -->
-<script src="js/utils.js?v=38"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=38"></script>      <!-- карта -->
-<script src="js/ui.js?v=38"></script>
-<script src="js/speedo.js?v=38"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=38"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=38"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=38"></script>     <!-- привязка к дорогам -->
-<script src="js/search.js?v=38"></script>   <!-- поиск трасс: карточки и фильтры -->
-<script src="js/track.js?v=38"></script>    <!-- карточка трассы: карта и рекорды -->
-<script src="js/routes.js?v=38"></script>   <!-- окно «Трассы» -->
-<script src="js/history.js?v=38"></script>   <!-- история заездов и тепловая карта -->
-<script src="js/launch.js?v=38"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=38"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/hud.js?v=38"></script>      <!-- проекция на стекло и настройка экрана -->
-<script src="js/turns.js?v=38"></script>     <!-- повороты трассы и их сложность -->
-<script src="js/signs.js?v=38"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
-<script src="js/menu.js?v=38"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=38"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=38"></script> <!-- конфетти при рекорде -->
-<script src="js/profile.js?v=38"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=38"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=38"></script>      <!-- запуск и кнопки -->
+<script src="js/config.js?v=39"></script>   <!-- настройки -->
+<script src="js/utils.js?v=39"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=39"></script>      <!-- карта -->
+<script src="js/ui.js?v=39"></script>
+<script src="js/speedo.js?v=39"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=39"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=39"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=39"></script>     <!-- привязка к дорогам -->
+<script src="js/search.js?v=39"></script>   <!-- поиск трасс: карточки и фильтры -->
+<script src="js/track.js?v=39"></script>    <!-- карточка трассы: карта и рекорды -->
+<script src="js/routes.js?v=39"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=39"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=39"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=39"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/hud.js?v=39"></script>      <!-- проекция на стекло и настройка экрана -->
+<script src="js/turns.js?v=39"></script>     <!-- повороты трассы и их сложность -->
+<script src="js/signs.js?v=39"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
+<script src="js/welcome.js?v=39"></script>  <!-- приветствие (5 карточек) -->
+<script src="js/menu.js?v=39"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=39"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=39"></script> <!-- конфетти при рекорде -->
+<script src="js/profile.js?v=39"></script>  <!-- окно «Профиль» -->
+<script src="js/run.js?v=39"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=39"></script>      <!-- запуск и кнопки -->
 </body>
 </html>
