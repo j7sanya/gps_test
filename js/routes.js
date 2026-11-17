@@ -63,7 +63,7 @@ STR.routes = (function () {
               (snapped ? 'Трасса будет сохранена по дорогам.' : 'Привязки к дорогам нет, сохранится исходный GPS-трек.') +
               (rec.breaks === 0 ? '\nЭто время станет первым рекордом.' : '\nВ записи были разрывы, поэтому рекорд не засчитывается.');
     }
-    if (tooShort) info += `\n⛔ Трасса короче ${C.ROUTE_MIN_M} м, сохранить нельзя.`;
+    if (tooShort) info += `\nТрасса короче ${C.ROUTE_MIN_M} м, сохранить нельзя.`;
     $('saveInfo').textContent = info;
     $('saveOk').disabled = tooShort;
     $('routeName').value = 'Трасса ' + (STR.api.getRoutes().length + 1);
@@ -117,7 +117,7 @@ STR.routes = (function () {
       const r = await STR.api.publishRoute({ name, lines });
       $('saveOk').disabled = false;
       if (!r || !r.ok) {
-        $('saveInfo').textContent = '⚠️ ' + (PUBLISH_ERRORS[r && r.error] || PUBLISH_ERRORS.default);
+        $('saveInfo').textContent = (PUBLISH_ERRORS[r && r.error] || PUBLISH_ERRORS.default);
         $('savePublic').checked = false;
         return;   // окно остаётся открытым: можно сохранить только у себя
       }
@@ -138,7 +138,7 @@ STR.routes = (function () {
     closeSaveDialog();
     STR.ui.showSave(false);
     U.setStatus(ok
-      ? `Трасса «${name}» сохранена${publicNow ? ' и видна всем игрокам' : ''} · ${U.fmtKm(dist)}. Откройте «🏁 Трассы», чтобы увидеть её.`
+      ? `Трасса «${name}» сохранена${publicNow ? ' и видна всем игрокам' : ''} · ${U.fmtKm(dist)}. Откройте «Трассы» в меню, чтобы увидеть её.`
       : 'Не удалось сохранить трассу в память телефона (хранилище недоступно).');
     if (done) done(lines);
   }
