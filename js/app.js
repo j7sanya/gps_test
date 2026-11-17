@@ -111,8 +111,10 @@
   STR.api.checkNick().then(r => { if (r === 'none') $('nickGate').classList.add('open'); });
 
   // Запуск: грузим официальные трассы и сразу определяем местоположение
-  STR.api.init().then(() => STR.run.refresh());
-  STR.api.loadBoard();   // общие рекорды (нужны и для проверки, умеет ли сервер делить «С хода / С места»)
-  STR.api.loadPublicRoutes().then(ok => { if (ok) STR.run.refresh(); });   // публичные трассы других игроков
+  const pInit = STR.api.init().then(() => STR.run.refresh());
+  const pBoard = STR.api.loadBoard();   // общие рекорды (нужны и для проверки, умеет ли сервер делить «С хода / С места»)
+  const pPub = STR.api.loadPublicRoutes().then(ok => { if (ok) STR.run.refresh(); });   // публичные трассы других игроков
+  // Пришли по ссылке на заезд или профиль (из «Поделиться»): когда всё загрузилось, открываем нужное окно
+  Promise.all([pInit, pBoard, pPub]).then(() => STR.share.handleStart()).catch(() => {});
   STR.gps.startWatching();
 })();

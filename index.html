@@ -12,9 +12,9 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Оформление. ?v=40 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
+<!-- Оформление. ?v=41 — номер версии: меняйте его (и VERSION в js/config.js) после обновлений,
      чтобы телефон не показывал старые файлы из кэша -->
-<link rel="stylesheet" href="css/style.css?v=40">
+<link rel="stylesheet" href="css/style.css?v=41">
 </head>
 
 <body>
@@ -29,6 +29,7 @@
     <div id="runName"></div>
     <div id="runTime">00:00.00</div>
     <div id="runInfo"></div>
+    <button id="runShare">Поделиться заездом</button>
     <button id="runBtn">Отменить заезд</button>
   </div>
 
@@ -122,7 +123,7 @@
 
 <!-- Окно заезда: тепловая карта скорости -->
 <div id="runOverlay">
-  <div class="ov-head"><h2 id="rvTitle">Заезд</h2><div class="rv-act"><button class="hi-star" id="rvStar" aria-label="Закрепить">☆</button><button class="ov-close" id="runClose">✕</button></div></div>
+  <div class="ov-head"><h2 id="rvTitle">Заезд</h2><div class="rv-act"><button class="hi-star" id="rvShare" aria-label="Поделиться"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5"/><path d="M7.5 8L12 3.5 16.5 8"/><path d="M5 12v7.5h14V12"/></svg></button><button class="hi-star" id="rvStar" aria-label="Закрепить">☆</button><button class="ov-close" id="runClose">✕</button></div></div>
   <div id="rvBody">
     <div id="rvMapBox">
       <div id="runMap"></div>
@@ -354,29 +355,59 @@
 </div>
 
 <!-- Код приложения. Порядок важен: каждый файл использует те, что выше. -->
-<script src="js/config.js?v=40"></script>   <!-- настройки -->
-<script src="js/utils.js?v=40"></script>    <!-- общие помощники -->
-<script src="js/map.js?v=40"></script>      <!-- карта -->
-<script src="js/ui.js?v=40"></script>
-<script src="js/speedo.js?v=40"></script>   <!-- спидометр (нижняя панель) -->
-<script src="js/api.js?v=40"></script>      <!-- хранение данных (трассы, рекорды) -->
-<script src="js/gps.js?v=40"></script>      <!-- GPS и запись трека -->
-<script src="js/snap.js?v=40"></script>     <!-- привязка к дорогам -->
-<script src="js/search.js?v=40"></script>   <!-- поиск трасс: карточки и фильтры -->
-<script src="js/track.js?v=40"></script>    <!-- карточка трассы: карта и рекорды -->
-<script src="js/routes.js?v=40"></script>   <!-- окно «Трассы» -->
-<script src="js/history.js?v=40"></script>   <!-- история заездов и тепловая карта -->
-<script src="js/launch.js?v=40"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
-<script src="js/settings.js?v=40"></script>  <!-- настройки и «Трассы рядом» -->
-<script src="js/hud.js?v=40"></script>      <!-- проекция на стекло и настройка экрана -->
-<script src="js/turns.js?v=40"></script>     <!-- повороты трассы и их сложность -->
-<script src="js/signs.js?v=40"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
-<script src="js/welcome.js?v=40"></script>  <!-- приветствие (5 карточек) -->
-<script src="js/menu.js?v=40"></script>      <!-- боковое меню -->
-<script src="js/builder.js?v=40"></script>   <!-- создание трассы на карте -->
-<script src="js/confetti.js?v=40"></script> <!-- конфетти при рекорде -->
-<script src="js/profile.js?v=40"></script>  <!-- окно «Профиль» -->
-<script src="js/run.js?v=40"></script>      <!-- заезд: старт, секундомер, финиш -->
-<script src="js/app.js?v=40"></script>      <!-- запуск и кнопки -->
+<!-- Поделиться заездом: карточка для историй и постов (js/share.js) -->
+<div id="shareOverlay">
+  <div class="ov-head"><h2>Поделиться</h2><button class="ov-close" id="shareClose">✕</button></div>
+  <div id="shPrev"><canvas id="shCanvas" width="1080" height="1920"></canvas></div>
+  <div id="shCtl">
+    <div class="sh-lbl">Формат</div><div class="sh-chips" id="shFmt"></div>
+    <div class="sh-lbl">Вид</div><div class="sh-chips" id="shType"></div>
+    <div class="sh-lbl">Стиль</div><div class="sh-chips" id="shStyle"></div>
+    <label id="shNickRow"><input type="checkbox" id="shNick"> Показывать мой ник</label>
+    <div id="shHint"></div>
+  </div>
+  <div id="shBar">
+    <button class="sh-btn main" id="shSave">Сохранить в галерею</button>
+    <button class="sh-btn" id="shSend">Instagram · VK · другие…</button>
+    <div class="sh-two">
+      <button class="sh-btn" id="shStory">В историю Telegram</button>
+      <button class="sh-btn" id="shChat">В чат со ссылкой</button>
+    </div>
+    <div id="shNote"></div>
+  </div>
+</div>
+<div id="shViewer">
+  <img id="shImg" alt="">
+  <div class="sh-vhint">Нажмите на картинку и держите палец → «Сохранить в Фото»</div>
+  <button id="shViewerClose">Закрыть</button>
+</div>
+
+<script src="js/config.js?v=41"></script>   <!-- настройки -->
+<script src="js/utils.js?v=41"></script>    <!-- общие помощники -->
+<script src="js/map.js?v=41"></script>      <!-- карта -->
+<script src="js/ui.js?v=41"></script>
+<script src="js/speedo.js?v=41"></script>   <!-- спидометр (нижняя панель) -->
+<script src="js/api.js?v=41"></script>      <!-- хранение данных (трассы, рекорды) -->
+<script src="js/gps.js?v=41"></script>      <!-- GPS и запись трека -->
+<script src="js/snap.js?v=41"></script>     <!-- привязка к дорогам -->
+<script src="js/search.js?v=41"></script>   <!-- поиск трасс: карточки и фильтры -->
+<script src="js/track.js?v=41"></script>    <!-- карточка трассы: карта и рекорды -->
+<script src="js/routes.js?v=41"></script>   <!-- окно «Трассы» -->
+<script src="js/history.js?v=41"></script>   <!-- история заездов и тепловая карта -->
+<script src="js/launch.js?v=41"></script>    <!-- старт с места: подсказка, подготовка, светофор -->
+<script src="js/settings.js?v=41"></script>  <!-- настройки и «Трассы рядом» -->
+<script src="js/hud.js?v=41"></script>      <!-- проекция на стекло и настройка экрана -->
+<script src="js/turns.js?v=41"></script>     <!-- повороты трассы и их сложность -->
+<script src="js/signs.js?v=41"></script>     <!-- знаки поворотов: лента, проекция, звук, настройки -->
+<script src="js/welcome.js?v=41"></script>  <!-- приветствие (5 карточек) -->
+<script src="js/menu.js?v=41"></script>      <!-- боковое меню -->
+<script src="js/builder.js?v=41"></script>   <!-- создание трассы на карте -->
+<script src="js/confetti.js?v=41"></script> <!-- конфетти при рекорде -->
+<script src="js/profile.js?v=41"></script>  <!-- окно «Профиль» -->
+<script src="js/qr.js?v=41"></script>       <!-- QR-код для карточки -->
+<script src="js/cards.js?v=41"></script>    <!-- рисование карточек заезда -->
+<script src="js/share.js?v=41"></script>    <!-- «Поделиться»: окно, ссылки, отправка -->
+<script src="js/run.js?v=41"></script>      <!-- заезд: старт, секундомер, финиш -->
+<script src="js/app.js?v=41"></script>      <!-- запуск и кнопки -->
 </body>
 </html>

@@ -219,6 +219,8 @@ STR.history = (function () {
     $('rvDist').textContent = (r.dist / 1000).toFixed(1);
     drawStar(r);
     $('rvStar').onclick = () => toggleStar(STR.api.getRuns().find(x => idOf(x) === curId) || r);
+    $('rvShare').style.display = r.valid === false ? 'none' : '';   // заезд с нарушением не показываем в соцсетях
+    $('rvShare').onclick = () => STR.share && STR.share.open(STR.api.getRuns().find(x => idOf(x) === curId) || r);
     $('rvMapBox').classList.toggle('nomap', !t);
     $('runOverlay').classList.add('open');
     bb(false, close); bb(true, closeRun);

@@ -144,5 +144,8 @@ STR.routes = (function () {
   }
 
   const isOpen = () => $('routesOverlay').classList.contains('open');
-  return { isOpen, open, close, openSaveDialog, closeSaveDialog, save };
+  // Открыть карточку трассы напрямую (по ссылке на заезд, см. share.js)
+  function openTrack(r) { STR.track.open(r, { showOnMap, remove, close }); }
+
+  return { isOpen, open, close, openSaveDialog, closeSaveDialog, save, openTrack };
 })();

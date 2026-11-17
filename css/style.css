@@ -783,3 +783,49 @@ body.fh #launchOverlay { transform: scaleX(-1); }
 .w-card.last .w-text li { margin: 4px 0; }
 .w-card.last .w-title { margin-top: 10px; }
 @media (max-height: 520px) { .w-card.last .w-scene { display: none; } }
+
+/* ---------- Поделиться (js/share.js) ---------- */
+#runShare {
+  display: none; margin-top: calc(8px * var(--k)); padding: calc(9px * var(--k)); font-size: max(12px, calc(13px * var(--k))); border-radius: 10px; box-shadow: none;
+}
+#runBanner.done #runShare { display: block; }
+.hi-star svg { display: block; }
+#rvShare { color: var(--text); }
+.pf-share {
+  margin-bottom: 14px; padding: 12px; font-size: 14px; border-radius: 12px; box-shadow: none;
+  background: var(--card); color: var(--text); border: 1px solid var(--line);
+}
+#shareOverlay {
+  display: none; position: fixed; inset: 0; z-index: 3950; flex-direction: column; background: var(--bg); color: var(--text);
+}
+#shareOverlay.open { display: flex; }
+#shPrev {
+  flex: 1; min-height: 150px; display: flex; align-items: center; justify-content: center; padding: 12px 16px 8px;
+}
+#shPrev canvas {
+  max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,.55);
+  -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
+}
+#shPrev.png canvas {   /* прозрачный слой показываем на «шашечках», чтобы было видно, что фона нет */
+  background: conic-gradient(#3b414c 25%, #2d323b 0 50%, #3b414c 0 75%, #2d323b 0) 0 0 / 22px 22px;
+}
+#shCtl { padding: 4px 16px 6px; }
+.sh-lbl { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--hint); margin: 8px 0 5px; }
+.sh-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#shNickRow { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 13px; color: var(--hint); }
+#shNickRow input { width: 18px; height: 18px; accent-color: var(--accent); }
+#shHint { font-size: 11.5px; line-height: 1.35; color: var(--hint); margin-top: 8px; }
+#shBar { padding: 8px 16px calc(12px + var(--bot)); display: flex; flex-direction: column; gap: 8px; background: var(--panel); border-top: 1px solid var(--line); }
+.sh-btn { padding: 13px 10px; font-size: 14px; border-radius: 12px; background: var(--card-hi); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+.sh-btn.main { background: var(--accent); border-color: var(--accent); font-size: 15px; box-shadow: 0 6px 20px rgba(255,45,61,.28); }
+.sh-btn:disabled { opacity: .5; }
+.sh-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#shNote { min-height: 0; font-size: 12px; line-height: 1.35; color: var(--warn); }
+#shNote:empty { display: none; }
+#shViewer {
+  display: none; position: fixed; inset: 0; z-index: 4100; background: #000; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px;
+}
+#shViewer.open { display: flex; }
+#shImg { max-width: 100%; max-height: calc(100% - 120px); object-fit: contain; border-radius: 10px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
+.sh-vhint { font-size: 13px; color: var(--hint); text-align: center; }
+#shViewer button { width: auto; padding: 10px 26px; background: var(--card-hi); border: 1px solid var(--line); box-shadow: none; }

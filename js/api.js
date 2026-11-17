@@ -222,6 +222,7 @@ STR.api = (function () {
 
   return {
     init,
+    callServer,   // вызов серверной функции (js/share.js)
     loadBoard,
     loadMe,
     loadPlayer,

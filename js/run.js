@@ -24,6 +24,7 @@ STR.run = (function () {
   const filter = { last: null, speed: null };   // собственный фильтр GPS-точек для заездов
   let armedId = null;                   // трасса, выбранная для заезда «с хода»: только она стартует при проезде линии
   let pending = null;                   // пересечена линия старта, ждём подтверждения (см. RUN_START_CONFIRM_M)
+  let lastMeta = null;                  // запись последнего законченного заезда (для кнопки «Поделиться»)
   let lastDone = null;                  // итог последнего заезда (для проекции)
   let lastPanelT = 0;                   // когда в последний раз обновляли нижнюю панель
 
@@ -115,10 +116,11 @@ STR.run = (function () {
   function showBanner(title) {
     $('runBanner').classList.add('open');
     $('runBanner').classList.remove('bad');
+    $('runBanner').classList.remove('done');
     $('runName').textContent = title;
     $('runBtn').textContent = 'Отменить заезд';
   }
-  function hideBanner() { $('runBanner').classList.remove('open'); }
+  function hideBanner() { $('runBanner').classList.remove('open'); $('runBanner').classList.remove('done'); }
 
   function tick() {
     if (!run) return;
@@ -271,6 +273,7 @@ STR.run = (function () {
       dist: pr.distance, date: Date.now(), valid: !run.invalid, record: isRecord, star: false, start: sm
     };
     STR.api.addRun(meta);
+    lastMeta = meta;
     if (STR.history) STR.history.save(meta, run.track);   // трек для карты скорости (js/history.js)
 
     // Нижняя панель показывает итоги заезда: время до сотых берётся из t1, длина — длина трассы
@@ -286,6 +289,7 @@ STR.run = (function () {
     STR.ui.setRunning(false);
     cooldownUntil = t1 + C.RUN_COOLDOWN_S * 1000;
     $('runBanner').classList.toggle('bad', bad);
+    $('runBanner').classList.toggle('done', !bad);   // кнопка «Поделиться заездом» — только у засчитанного заезда
     $('runName').textContent = '🏁 Финиш · ' + pr.name;
     $('runTime').textContent = U.fmtPrecise(time);
     $('runInfo').textContent = `${info}\nСредняя скорость: ${Math.round(avg)} км/ч`;
@@ -396,6 +400,7 @@ STR.run = (function () {
 
   // Кнопка в баннере: «Отменить заезд» / «Закрыть»
   $('runBtn').addEventListener('click', cancel);
+  $('runShare').addEventListener('click', () => { if (lastMeta && STR.share) STR.share.open(lastMeta); });
 
   // ---------- Старт с места (см. launch.js) ----------
   // Заезд начинается по сигналу светофора: t0 — момент «зелёного». Возвращает true, если заезд запущен.

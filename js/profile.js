@@ -90,6 +90,12 @@ STR.profile = (function () {
     });
     box.appendChild(tiles);
 
+    if (me && me.num) {   // ссылка на свой профиль в чат
+      const sb = el('pf-share', '🔗 Поделиться профилем', 'button');
+      sb.onclick = () => STR.share.shareProfile(me.num, nick);
+      box.appendChild(sb);
+    }
+
     // ----- Мой гараж (пока пусто) -----
     const garage = el('pf-card pf-garage');
     garage.appendChild(el('ico', '🚗'));
@@ -147,6 +153,12 @@ STR.profile = (function () {
       tiles.appendChild(t);
     });
     box.appendChild(tiles);
+
+    if (v.num) {
+      const sb = el('pf-share', '🔗 Поделиться профилем', 'button');
+      sb.onclick = () => STR.share.shareProfile(v.num, nick);
+      box.appendChild(sb);
+    }
 
     const garage = el('pf-card pf-garage');
     garage.appendChild(el('ico', '🚗'));
