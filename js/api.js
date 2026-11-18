@@ -101,6 +101,14 @@ STR.api = (function () {
     } catch (e) { return { error: 'network' }; }
   }
 
+  // Админ ли вы (ответ сервера). Нужен, чтобы показать кнопку «Удалить» на чужих публичных трассах.
+  let adminOn = false;
+  async function checkAdmin() {
+    const r = await callServer({ action: 'me' });
+    adminOn = !!(r && r.ok && r.admin);
+    return adminOn;
+  }
+
   // Опубликовать трассу: { name, lines }. Ответ: { ok, id } или { error: 'limit' | 'nick' | 'short' | ... }
   async function publishRoute(route) {
     const r = await callServer({ action: 'publish_route', name: route.name, lines: route.lines });
@@ -304,6 +312,8 @@ STR.api = (function () {
     getRoutes() { return official.concat(pubRoutes, localRoutes()); },
     loadPublicRoutes,
     publishRoute,
+    checkAdmin,
+    isAdmin() { return adminOn; },
     // Сколько публичных трасс создали вы
     myPublicCount() { return pubRoutes.filter(r => r.mine).length; },
 

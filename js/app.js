@@ -113,6 +113,7 @@
   // Запуск: грузим официальные трассы и сразу определяем местоположение
   const pInit = STR.api.init().then(() => STR.run.refresh());
   const pBoard = STR.api.loadBoard();   // общие рекорды (нужны и для проверки, умеет ли сервер делить «С хода / С места»)
+  STR.api.checkAdmin().catch(() => {});   // админские права (кнопка «Удалить» на чужих публичных трассах)
   const pPub = STR.api.loadPublicRoutes().then(ok => { if (ok) STR.run.refresh(); });   // публичные трассы других игроков
   // Пришли по ссылке на заезд или профиль (из «Поделиться»): когда всё загрузилось, открываем нужное окно
   Promise.all([pInit, pBoard, pPub]).then(() => STR.share.handleStart()).catch(() => {});

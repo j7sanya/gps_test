@@ -134,8 +134,8 @@ STR.track = (function () {
     });
 
     box.appendChild(el('tc-note', 'С хода — время от пересечения линии старта. С места — от сигнала светофора. Таблицы отдельные.'));
-    if (r.local || r.mine) {
-      const d = el('tc-del', 'Удалить трассу');
+    if (r.local || r.mine || (r.public && STR.api.isAdmin())) {
+      const d = el('tc-del', r.public && !r.mine ? 'Удалить трассу (админ)' : 'Удалить трассу');
       d.onclick = () => handlers && handlers.remove(r, back);
       box.appendChild(d);
     }

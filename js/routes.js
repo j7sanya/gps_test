@@ -35,7 +35,8 @@ STR.routes = (function () {
       render();
       if (done) done();
     };
-    const text = r.public ? `Удалить публичную трассу «${r.name}»? Она пропадёт у всех, рекорды на ней тоже удалятся.`
+    const text = r.public && !r.mine ? `Удалить трассу «${r.name}» игрока ${r.author}? Она пропадёт у всех, рекорды на ней тоже удалятся.`
+               : r.public ? `Удалить публичную трассу «${r.name}»? Она пропадёт у всех, рекорды на ней тоже удалятся.`
                           : `Удалить трассу «${r.name}»?`;
     const tg = STR.tg;
     if (tg && tg.showConfirm) {
