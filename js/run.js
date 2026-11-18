@@ -156,6 +156,7 @@ STR.run = (function () {
     };
     mode = 'running';
     armedId = null;                              // выбор «с хода» использован
+    try { STR.launch.pill(); } catch (e) {}
     STR.ui.setRunning(true);                     // кнопка внизу справа становится «отменить заезд»
     if (STR.hud) STR.hud.auto();                 // проекция включается сама (если так настроено)
     showBanner(pr.name);
@@ -418,7 +419,7 @@ STR.run = (function () {
   const getPrepared = () => prepared;
 
   // «С хода»: выбрать трассу, старт которой запустит секундомер при проезде линии
-  function arm(id) { armedId = id == null ? null : String(id); pending = null; }
+  function arm(id) { armedId = id == null ? null : String(id); pending = null; try { STR.launch.pill(); } catch (e) {} }
   const armed = () => armedId;
 
   // Живые данные заезда для режима проекции

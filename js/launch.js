@@ -146,9 +146,27 @@ STR.launch = (function () {
   // «С хода» выбрано: ждём проезда линии старта
   function showRolling(pr) {
     rollId = pr.id; suggestId = null;
-    showCard(`<b>🏁 ${esc(pr.name)} — заезд с хода</b>
-      <small>Проезжайте линию старта: время пойдёт с неё.</small>
-      <button class="alt lc-small" data-act="unroll">Отмена</button>`);
+    hideCard();                       // дальше о выборе напоминает плашка «Ждём старт» (pillTick)
+    pillTick(last);
+    U.setStatus(`«${pr.name}»: проезжайте линию старта, время пойдёт с неё.`);
+  }
+
+  // ---------- Плашка «Ждём старт» над нижней панелью ----------
+  // Видна, пока трасса выбрана «с хода» (из подсказки или из списка трасс) и заезд ещё не начался.
+  function pillTick(p) {
+    const el = $('waitPill'); if (!el) return;
+    const id = STR.run.armed();
+    const pr = id && !STR.run.isActive() && state === 'idle' && !card().classList.contains('open') ? STR.run.getPrepared().find(x => x.id === id) : null;
+    if (!pr) { el.classList.remove('open'); return; }
+    let t = 'Ждём старт', d = '';
+    if (p) { const m = distToStart(pr, p); if (m <= 40) t = 'Проезжайте старт'; else d = fmtDist(m).replace('.', ','); }
+    $('wpT').textContent = t; $('wpD').textContent = d;
+    el.classList.add('open');
+  }
+  function cancelWait() {
+    if (rollId !== null) { stopRolling(true); }
+    else { STR.run.arm(null); if (!STR.run.isActive()) STR.map.clearRoute(); }
+    pillTick(last);
   }
   function stopRolling(clear) {
     if (rollId === null) return;
@@ -292,6 +310,7 @@ STR.launch = (function () {
   function onFix(p) {
     last = p;
     speedKmh = calcSpeed(p);
+    pillTick(p);
     if (p.acc <= 30) { recent.push(p); if (recent.length > 4) recent.shift(); }
 
     if (state === 'prepare') { refreshPrepare(); return; }
@@ -351,6 +370,7 @@ STR.launch = (function () {
     if (act === 'start') choose(suggestId);
     else if (act === 'roll') { const pr = STR.run.getPrepared().find(x => x.id === suggestId); if (pr) { if (STR.gps.isRecording()) return; STR.run.arm(pr.id); STR.map.showRoute(pr.lines, false); showRolling(pr); } }
     else if (act === 'unroll') stopRolling(true);
+    else if (act === 'unwait') cancelWait();
     else if (act === 'later') { if (suggestId) dismissed[suggestId] = 1; hideCard(); }
     else if (act === 'more') { STR.routes && STR.routes.open(); }
     else if (act === 'ready') ready();
@@ -369,7 +389,7 @@ STR.launch = (function () {
   });
 
   return {
-    onFix, busy, choose, demo, drawPreview,
+    onFix, busy, choose, demo, drawPreview, pill: () => pillTick(last),
     styles: STYLES, hints: Object.fromEntries(Object.keys(TL).map(k => [k, TL[k].hint])),
     cfg: () => Object.assign({}, cfg),
     set(k, v) { cfg[k] = v; save(); if (k === 'suggest' && !v) hideCard(); },

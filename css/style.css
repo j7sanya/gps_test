@@ -501,21 +501,7 @@ body.building #locate { top: 12px; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
 #hiRoute { width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; -webkit-appearance: none; appearance: none; }
 #hiNote { font-size: 11px; color: var(--hint); line-height: 1.4; }
-#hiList { flex: 1; overflow-y: auto; padding: 6px 12px calc(16px + var(--bot)); }
-.hi-run { display: flex; gap: 10px; align-items: stretch; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 9px; cursor: pointer; position: relative; }
-.hi-th { width: 84px; height: 68px; border-radius: 10px; background: #0d1014; flex: none; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.hi-th svg { width: 100%; height: 100%; display: block; }
-.hi-nothumb { font-size: 22px; opacity: .5; }
-.hi-m { flex: 1; min-width: 0; padding-right: 30px; }
-.hi-n { display: flex; justify-content: space-between; gap: 6px; font-size: 13px; font-weight: 700; }
-.hi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hi-when { font-style: normal; font: 600 11px var(--mono); color: var(--hint); white-space: nowrap; }
-.hi-tm { font: 800 21px/1.2 var(--mono); }
-.hi-s { font-size: 10.5px; color: var(--hint); }
-.tag { display: inline-block; font: 700 10px sans-serif; border-radius: 6px; padding: 2px 6px; margin-left: 6px; vertical-align: middle; }
-.t-rec { background: #2a2410; color: var(--warn); } .t-bad { background: #2c1519; color: var(--accent); }
-.hi-star { position: absolute; right: 6px; bottom: 6px; width: 34px; height: 34px; padding: 0; border-radius: 10px; background: transparent; border: 0; box-shadow: none; font-size: 19px; color: var(--hint); display: flex; align-items: center; justify-content: center; }
-.hi-star.on { color: #ffc21a; }
+#hiList { flex: 1; overflow-y: auto; padding: 0 14px calc(16px + var(--bot)); }
 .rv-act { display: flex; align-items: center; gap: 8px; }
 .rv-act .hi-star { position: static; width: 38px; height: 38px; background: var(--card-hi); border: 1px solid var(--line); }
 #rvBody { flex: 1; overflow-y: auto; }
@@ -821,3 +807,45 @@ body.fh #launchOverlay { transform: scaleX(-1); }
 #shImg { max-width: 100%; max-height: calc(100% - 120px); object-fit: contain; border-radius: 10px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
 .sh-vhint { font-size: 13px; color: var(--hint); text-align: center; }
 #shViewer button { width: auto; padding: 10px 26px; background: var(--card-hi); border: 1px solid var(--line); box-shadow: none; }
+
+
+/* ---------- История заездов: плоский список по дням (v44) ---------- */
+#hiChips .chip { background: transparent; }
+#hiChips .chip.on { background: var(--card-hi); border-color: #39414f; color: var(--text); font-weight: 600; }
+.hi-day { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--hint); font-weight: 600; padding: 14px 2px 6px; }
+.hr { display: flex; align-items: center; gap: 10px; padding: 11px 2px; border-bottom: 1px solid #1c2129; cursor: pointer; }
+.hr-t { width: 104px; flex: none; font: 700 18px var(--mono); font-variant-numeric: tabular-nums; }
+.hr-m { flex: 1; min-width: 0; }
+.hr-n { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hr-s { font-size: 10.5px; color: var(--hint); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hr-r { text-align: right; flex: none; }
+.tag { display: inline-block; font: 600 12px var(--mono); }
+.t-rec { color: var(--warn); font: 700 10.5px sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.t-bad { color: var(--bad); }
+.t-no { color: var(--hint); font: 500 11px sans-serif; }
+.hi-star { width: 34px; height: 34px; padding: 0; border-radius: 10px; background: transparent; border: 0; box-shadow: none; color: var(--hint); display: flex; align-items: center; justify-content: center; flex: none; }
+.hi-star svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.hi-star.on { color: var(--warn); }
+.hi-star.on svg { fill: rgba(255,180,0,.18); }
+#rvTag .tag { font-size: 11px; }
+
+/* ---------- Плашка «Ждём старт» (v44) ---------- */
+#waitPill {
+  display: none; position: absolute; left: 12px; bottom: calc(100% + 31px); z-index: 1100;
+  max-width: calc(100% - 96px); height: 42px; padding: 0 7px 0 18px; align-items: center; gap: 10px;
+  border-radius: 999px; background: rgba(14,17,22,.8); border: 1.5px solid rgba(255,45,61,.6); color: var(--text);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); white-space: nowrap;
+  animation: waitPulse 1.8s ease-in-out infinite;
+}
+#waitPill.open { display: flex; }
+.wp-t { font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--hint); overflow: hidden; text-overflow: ellipsis; }
+.wp-d { font: 700 15px var(--mono); font-variant-numeric: tabular-nums; }
+.wp-d:empty { display: none; }
+.wp-x { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; box-shadow: none; background: rgba(255,255,255,.07); color: var(--hint); display: flex; align-items: center; justify-content: center; flex: none; }
+.wp-x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+@keyframes waitPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,61,0); border-color: rgba(255,45,61,.38); }
+  50% { box-shadow: 0 0 16px 2px rgba(255,45,61,.45); border-color: rgba(255,45,61,.95); }
+}
+@media (prefers-reduced-motion: reduce) { #waitPill { animation: none; border-color: rgba(255,45,61,.7); } }
+#hiRoute { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238f98a7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; }

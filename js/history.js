@@ -3,7 +3,7 @@
 //
 // Что хранится (только на этом телефоне):
 //  • последние 20 заездов;
-//  • заезды, которыми вы побили рекорд (🏆), и заезды со звёздочкой (⭐) — они не удаляются
+//  • заезды, которыми вы побили рекорд, и закреплённые заезды (звёздочка) — они не удаляются
 //    (закреплённых не больше 40).
 // Для карты скорости сохраняется трек заезда: точка раз в секунду (время, координаты, скорость).
 // Трек хранится в сжатом виде (целые числа-«шаги»), примерно 10–15 байт на точку.
@@ -40,7 +40,7 @@ STR.history = (function () {
     return out;
   }
 
-  // Какие заезды хранить: последние 20 + закреплённые (⭐ в первую очередь, затем 🏆 рекорды)
+  // Какие заезды хранить: последние 20 + закреплённые (звёздочка в первую очередь, затем рекорды)
   function keepSet(runs) {
     const keep = new Set(runs.slice(-LIMIT).map(idOf));
     const stars = runs.filter(r => r.star);
@@ -100,28 +100,6 @@ STR.history = (function () {
     }
     return out;
   }
-  // Миниатюра трассы для списка (SVG)
-  function thumb(pts) {
-    if (!pts || pts.length < 2) return '<div class="hi-nothumb">🗺️</div>';
-    const { sm, vmax } = prep(pts), lat0 = pts[0].lat, kx = Math.cos(lat0 * Math.PI / 180);
-    const xy = pts.map(p => [p.lon * kx, -p.lat]);
-    const xs = xy.map(p => p[0]), ys = xy.map(p => p[1]);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const W = 84, H = 68, pad = 7, s = Math.min((W - 2 * pad) / ((x1 - x0) || 1e-9), (H - 2 * pad) / ((y1 - y0) || 1e-9));
-    const ox = (W - (x1 - x0) * s) / 2, oy = (H - (y1 - y0) * s) / 2;
-    const P = xy.map(p => [(p[0] - x0) * s + ox, (p[1] - y0) * s + oy]);
-    let svg = `<svg viewBox="0 0 ${W} ${H}"><polyline points="${P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="#1d222b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
-    let cur = null, buf = [];
-    const flush = () => { if (cur !== null && buf.length > 1) svg += `<polyline points="${buf.join(' ')}" fill="none" stroke="${color((cur + 0.5) / 16)}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`; };
-    for (let i = 1; i < P.length; i++) {
-      const b = Math.min(15, Math.floor((sm[i] / vmax) * 16)), a = P[i - 1].map(v => v.toFixed(1)).join(','), c = P[i].map(v => v.toFixed(1)).join(',');
-      if (b !== cur) { flush(); cur = b; buf = [a]; }
-      buf.push(c);
-    }
-    flush();
-    return svg + '</svg>';
-  }
-
   // ---------- Оформление ----------
   function when(ts) {
     const d = new Date(ts), now = new Date(), hm = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -132,11 +110,20 @@ STR.history = (function () {
     return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '') + ' ' + hm;
   }
   function tag(r) {
-    if (r.valid === false) return '<span class="tag t-bad">не засчитан</span>';
-    if (r.record) return '<span class="tag t-rec">🏆 РЕКОРД</span>';
+    if (r.valid === false) return '<span class="tag t-no">не засчитан</span>';
+    if (r.record) return '<span class="tag t-rec">рекорд</span>';
     const rec = STR.api.getRecord(r.routeId, r.start === 'stand' ? 'stand' : 'roll');
-    if (rec && rec.time) { const d = r.time - rec.time; if (d > 0.005) return `<span class="tag t-bad">+${d.toFixed(2)}</span>`; }
+    if (rec && rec.time) { const d = r.time - rec.time; if (d > 0.005) return `<span class="tag t-bad">+${d.toFixed(2).replace('.', ',')}</span>`; }
     return '';
+  }
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.8 1-5.9L3.5 9.8l5.9-.8z"/></svg>';
+  const hm = ts => new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  function dayLabel(ts) {
+    const d = new Date(ts), now = new Date(), day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((day(now) - day(d)) / 86400000);
+    if (diff === 0) return 'Сегодня';
+    if (diff === 1) return 'Вчера';
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   }
 
   // ---------- Список ----------
@@ -158,20 +145,23 @@ STR.history = (function () {
     if (routeFilter) rows = rows.filter(r => String(r.routeId) === routeFilter);
 
     const tr = readTracks(), pins = all.filter(r => r.star).length;
-    $('hiNote').textContent = `Последние ${LIMIT} заездов + закреплённые (🏆 рекорды и ⭐) · хранятся на этом телефоне · ⭐ ${pins}/${PIN_MAX}`;
+    $('hiNote').textContent = `Последние ${LIMIT} и закреплённые · хранятся на этом телефоне` + (pins ? ` · закреплено ${pins}/${PIN_MAX}` : '');
     const box = $('hiList'); box.innerHTML = '';
     if (!rows.length) {
       box.innerHTML = `<div class="none">${all.length ? 'По этому фильтру ничего нет.' : 'Пока нет заездов.<br>Проедьте любую трассу — она появится здесь.'}</div>`;
       return;
     }
+    let lastDay = '';
     rows.forEach(r => {
-      const id = idOf(r), t = tr[id] ? dec(tr[id]) : null, el = document.createElement('div');
-      el.className = 'hi-run';
-      el.innerHTML = `<div class="hi-th">${thumb(t)}</div>
-        <div class="hi-m"><div class="hi-n"><span class="hi-name">${esc(r.routeName)}</span><i class="hi-when">${when(r.date)}</i></div>
-        <div class="hi-tm">${U.fmtPrecise(r.time)}${tag(r)}</div>
-        <div class="hi-s">${t ? `ср. ${Math.round(r.avgKmh)} км/ч · макс. ${Math.round(r.maxKmh)} км/ч` : 'без трека: заезд до обновления'}</div></div>
-        <button class="hi-star${r.star ? ' on' : ''}" aria-label="Закрепить">${r.star ? '⭐' : '☆'}</button>`;
+      const dl = dayLabel(r.date);
+      if (dl !== lastDay) { lastDay = dl; const h = document.createElement('div'); h.className = 'hi-day'; h.textContent = dl; box.appendChild(h); }
+      const id = idOf(r), has = !!tr[id], el = document.createElement('div');
+      el.className = 'hr';
+      el.innerHTML = `<div class="hr-t">${U.fmtPrecise(r.time)}</div>
+        <div class="hr-m"><div class="hr-n">${esc(r.routeName)}</div>
+        <div class="hr-s">${hm(r.date)} · ${has ? `${Math.round(r.avgKmh)} км/ч ср. · ${Math.round(r.maxKmh)} макс.` : 'без карты'}</div></div>
+        <div class="hr-r">${tag(r)}</div>
+        <button class="hi-star${r.star ? ' on' : ''}" aria-label="Закрепить">${STAR}</button>`;
       el.querySelector('.hi-star').addEventListener('click', e => { e.stopPropagation(); toggleStar(r); });
       el.addEventListener('click', () => openRun(r));
       box.appendChild(el);
@@ -181,17 +171,17 @@ STR.history = (function () {
   function toggleStar(r) {
     const id = idOf(r), runs = STR.api.getRuns();
     if (!r.star) {
-      if (runs.filter(x => x.star).length >= PIN_MAX) { U.setStatus(`Закреплено максимум ${PIN_MAX} заездов. Снимите ⭐ с ненужных.`); return; }
+      if (runs.filter(x => x.star).length >= PIN_MAX) { U.setStatus(`Закреплено максимум ${PIN_MAX} заездов. Снимите закрепление с ненужных.`); return; }
       STR.api.updateRun(id, { star: true });
       refresh();
       return;
     }
-    // снимаем звёздочку: если заезд не входит в «последние 20» и не рекордный, он удалится
+    // снимаем закрепление: если заезд не входит в «последние 20» и не рекордный, он удалится
     const recentIds = new Set(runs.slice(-LIMIT).map(idOf));
     const willDrop = !recentIds.has(id) && !r.record;
     const apply = () => { STR.api.updateRun(id, { star: false }); prune(); refresh(); };
     if (!willDrop) return apply();
-    const text = 'Снять звёздочку? Этот заезд будет удалён из истории.';
+    const text = 'Снять закрепление? Этот заезд будет удалён из истории.';
     const tg = STR.tg;
     if (tg && tg.showConfirm) { try { return tg.showConfirm(text, ok => ok && apply()); } catch (e) {} }
     if (window.confirm(text)) apply();
@@ -205,7 +195,7 @@ STR.history = (function () {
   const runOpen = () => $('runOverlay').classList.contains('open');
   let rmap = null, rheat = null, rcase = null, rmarks = [], curId = null;
 
-  function drawStar(r) { const b = $('rvStar'); b.textContent = r.star ? '⭐' : '☆'; b.classList.toggle('on', !!r.star); }
+  function drawStar(r) { const b = $('rvStar'); b.innerHTML = STAR; b.classList.toggle('on', !!r.star); }
 
   function openRun(r) {
     curId = idOf(r);
@@ -249,7 +239,7 @@ STR.history = (function () {
     const d1 = document.createElement('div'); d1.className = 'rt-pt st big'; pin(all[0], d1);
     const d2 = document.createElement('div'); d2.className = 'rt-pt fn big'; pin(all[all.length - 1], d2);
     let mi = 0; sm.forEach((v, i) => { if (v > sm[mi]) mi = i; });
-    const tag = document.createElement('div'); tag.className = 'rv-pin'; tag.textContent = '⚡ ' + Math.round(pts[mi].v) + ' км/ч';
+    const tag = document.createElement('div'); tag.className = 'rv-pin'; tag.textContent = 'макс. ' + Math.round(pts[mi].v) + ' км/ч';
     rmarks.push(new maplibregl.Marker({ element: tag, anchor: 'bottom', offset: [0, -6] }).setLngLat(M.ll(all[mi])).addTo(rmap));
     rmap.fitBounds(M.boundsOf(all), { padding: 34, duration: 0, maxZoom: 18 });
     $('rvLegMax').textContent = vmax + ' км/ч';
